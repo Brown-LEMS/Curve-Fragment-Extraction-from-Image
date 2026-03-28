@@ -2066,6 +2066,8 @@ void dbdet_sel_base::construct_all_DEHTs()
 
     // if an end point is found, construct an DEHT from it
     dbdet_DEHT* DEHT1 = construct_dyn_hyp_tree(eA);
+    if (!DEHT1)
+      continue;
     if (!DEHT1->best_path.empty()) // if there is a path ends at linked edge
     {
     	curve_frag_graph_.edgels_having_attached_paths[DEHT1->root->e->id] = 1;
@@ -3881,91 +3883,91 @@ void dbdet_sel_base::check_jct_compatibility (int edgel_id)
 
 void dbdet_sel_base::cut_jct_curve_fragment(int edgel_id)
 {
-	vcl_vector<dbdet_edgel*> dummy_chain;
+	if (edgel_id < 0)
+		return;
+	const unsigned uid = (unsigned)edgel_id;
+	if (uid >= edge_link_graph_.linked.size() || uid >= curve_frag_graph_.HypFrags.size())
+		return;
+	if (uid >= curve_frag_graph_.pFrags.size() || uid >= curve_frag_graph_.cFrags.size())
+		return;
+
 	edge_link_graph_.linked[edgel_id] = 1;
-	dbdet_edgel_chain_list_iter clit0= curve_frag_graph_.HypFrags[edgel_id].begin();
-	for( ; clit0!=curve_frag_graph_.HypFrags[edgel_id].end(); clit0++)
-    {
-		// from the closest edge to jct with edgel_id to the farthest edge
-		for (int i = (*clit0)->edgels.size()-2; i>=0; i--)
+	dbdet_edgel_chain_list_iter clit0 = curve_frag_graph_.HypFrags[edgel_id].begin();
+	while (clit0 != curve_frag_graph_.HypFrags[edgel_id].end())
+	{
+		dbdet_edgel_chain* hyp = *clit0;
+		if (!hyp)
 		{
-			int connect_id = (*clit0)->edgels[i]->id;
-			if(curve_frag_graph_.junction_edgels[connect_id] || edge_link_graph_.linked[connect_id]) // if reach a junction edge, or linked edge, cut the path to here
+			++clit0;
+			continue;
+		}
+		const int nedg = (int)hyp->edgels.size();
+		if (nedg < 2)
+		{
+			++clit0;
+			continue;
+		}
+
+		bool stepped_past_removed = false;
+		// from the closest edge to jct with edgel_id to the farthest edge
+		for (int i = nedg - 2; i >= 0; i--)
+		{
+			dbdet_edgel* ej = hyp->edgels[i];
+			if (!ej)
+				break;
+			int connect_id = ej->id;
+			if (connect_id < 0 ||
+			    unsigned(connect_id) >= curve_frag_graph_.junction_edgels.size() ||
+			    unsigned(connect_id) >= edge_link_graph_.linked.size())
+				continue;
+
+			if (curve_frag_graph_.junction_edgels[connect_id] || edge_link_graph_.linked[connect_id]) // if reach a junction edge, or linked edge, cut the path to here
 			{
-				(*clit0)->edgels.erase((*clit0)->edgels.begin(), (*clit0)->edgels.begin()+i);
-				vcl_vector<dbdet_edgel*> curve_0((*clit0)->edgels.begin(), (*clit0)->edgels.end());
+				hyp->edgels.erase(hyp->edgels.begin(), hyp->edgels.begin() + i);
+				vcl_vector<dbdet_edgel*> curve_0(hyp->edgels.begin(), hyp->edgels.end());
 				vcl_reverse(curve_0.begin(), curve_0.end()); // make curve_0 point out from edgel_id
 				///////////////////////////////////////////////////////////////////////////////////
-				// check if *clit0 overlaps with any existing curve fragment to edgel_id
+				// check if hyp overlaps with any existing curve fragment to edgel_id
 				bool found_overlapping = false;
 				dbdet_edgel_chain_list_iter clit1;
-				for(clit1=curve_frag_graph_.pFrags[edgel_id].begin(); clit1!=curve_frag_graph_.pFrags[edgel_id].end(); clit1++)
+				for (clit1 = curve_frag_graph_.pFrags[edgel_id].begin(); clit1 != curve_frag_graph_.pFrags[edgel_id].end(); clit1++)
 				{
+					if (!*clit1 || (*clit1)->edgels.empty())
+						continue;
 					vcl_vector<dbdet_edgel*> curve_1((*clit1)->edgels.begin(), (*clit1)->edgels.end());
 					vcl_reverse(curve_1.begin(), curve_1.end());
-					// make sure curve_0 curve_1 both point out from edgel_id
-					if(is_overlapping(curve_0, curve_1))
+					if (is_overlapping(curve_0, curve_1))
 					{
 						found_overlapping = true;
 						break;
 					}
 				}
-				for(clit1=curve_frag_graph_.cFrags[edgel_id].begin(); clit1!=curve_frag_graph_.cFrags[edgel_id].end(); clit1++)
+				for (clit1 = curve_frag_graph_.cFrags[edgel_id].begin(); clit1 != curve_frag_graph_.cFrags[edgel_id].end(); clit1++)
 				{
+					if (!*clit1 || (*clit1)->edgels.empty())
+						continue;
 					vcl_vector<dbdet_edgel*> curve_1((*clit1)->edgels.begin(), (*clit1)->edgels.end());
-					// make sure curve_0 curve_1 both point out from edgel_id
-					if(is_overlapping(curve_0, curve_1))
+					if (is_overlapping(curve_0, curve_1))
 					{
 						found_overlapping = true;
 						break;
 					}
 				}
-				// if it is overlapping, remove the path
-				if(found_overlapping)
+				if (found_overlapping)
 				{
-					curve_frag_graph_.HypFrags[edgel_id].remove(*clit0);
-					clit0--;
+					// list::remove invalidates clit0; advance before remove.
+					++clit0;
+					curve_frag_graph_.HypFrags[edgel_id].remove(hyp);
+					stepped_past_removed = true;
 				}
-				/*
-				// THIS STEP would remove a lot possible choices
-				///////////////////////////////////////////////////////////////////////////////////
-				// check if *clit0 overlaps any existing curve fragment to connect_id
-				found_overlapping = false;
-				vcl_reverse(curve_0.begin(), curve_0.end()); // make curve_0 point out from connect_id
-				for(clit1=curve_frag_graph_.pFrags[connect_id].begin(); clit1!=curve_frag_graph_.pFrags[connect_id].end(); clit1++)
-				{
-					vcl_vector<dbdet_edgel*> curve_1((*clit1)->edgels.begin(), (*clit1)->edgels.end());
-					vcl_reverse(curve_1.begin(), curve_1.end());
-					// make sure curve_0 curve_1 both point out from connect_id
-					if(is_overlapping(curve_0, curve_1))
-					{
-						found_overlapping = true;
-						break;
-					}
-				}
-				for(clit1=curve_frag_graph_.cFrags[connect_id].begin(); clit1!=curve_frag_graph_.cFrags[connect_id].end(); clit1++)
-				{
-					vcl_vector<dbdet_edgel*> curve_1((*clit1)->edgels.begin(), (*clit1)->edgels.end());
-					// make sure curve_0 curve_1 both point out from connect_id
-					if(is_overlapping(curve_0, curve_1))
-					{
-						found_overlapping = true;
-						break;
-					}
-				}
-				// if it is overlapping, remove the path
-				if(found_overlapping)
-				{
-					curve_frag_graph_.HypFrags[edgel_id].remove(*clit0);
-					clit0--;
-				}*/
 
 				break;
 			}
 		}
 
-
-    }
+		if (!stepped_past_removed)
+			++clit0;
+	}
 }
 
 //: merge all the curve fragment exact at junction point
@@ -4078,24 +4080,39 @@ bool dbdet_sel_base::is_cross_over(dbdet_edgel_chain* chain_1, dbdet_edgel_chain
 
 void dbdet_sel_base::prune_extreme_short_curve_frags() //  those isolated frags with only 2 edges, or single long link
 {
-	dbdet_edgel_chain_list_iter clit0;
-	for( clit0= curve_frag_graph_.frags.begin(); clit0!=curve_frag_graph_.frags.end(); clit0++)
+	dbdet_edgel_chain_list_iter clit0 = curve_frag_graph_.frags.begin();
+	while (clit0 != curve_frag_graph_.frags.end())
 	{
-		int eS_id = (*clit0)->edgels.front()->id;
-		int eE_id = (*clit0)->edgels.back()->id;
-		if((*clit0)->edgels.size()==2 && curve_frag_graph_.cFrags[eS_id].size() + curve_frag_graph_.pFrags[eS_id].size()==1
-				&& curve_frag_graph_.cFrags[eE_id].size() + curve_frag_graph_.pFrags[eE_id].size()==1 )
+		dbdet_edgel_chain* chain = *clit0;
+		if (!chain || chain->edgels.empty())
 		{
-			curve_frag_graph_.extract_fragment(*clit0);
-			clit0--;
+			++clit0;
 			continue;
 		}
-		if((*clit0)->edgels.size()==2 && compute_path_len((*clit0)->edgels)>2)
+		int eS_id = chain->edgels.front()->id;
+		int eE_id = chain->edgels.back()->id;
+		const unsigned nedges = curve_frag_graph_.cFrags.size();
+		if (eS_id < 0 || eE_id < 0 ||
+		    unsigned(eS_id) >= nedges || unsigned(eE_id) >= nedges)
 		{
-			curve_frag_graph_.extract_fragment(*clit0);
-			clit0--;
+			++clit0;
 			continue;
 		}
+		bool extract = false;
+		if (chain->edgels.size() == 2 &&
+		    curve_frag_graph_.cFrags[eS_id].size() + curve_frag_graph_.pFrags[eS_id].size() == 1 &&
+		    curve_frag_graph_.cFrags[eE_id].size() + curve_frag_graph_.pFrags[eE_id].size() == 1)
+			extract = true;
+		else if (chain->edgels.size() == 2 && compute_path_len(chain->edgels) > 2)
+			extract = true;
+		if (extract)
+		{
+			// Advance before extract_fragment: frags.remove() invalidates clit0.
+			++clit0;
+			curve_frag_graph_.extract_fragment(chain);
+			continue;
+		}
+		++clit0;
 	}
 }
 

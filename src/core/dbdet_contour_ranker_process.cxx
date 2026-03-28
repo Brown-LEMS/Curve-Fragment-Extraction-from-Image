@@ -231,7 +231,10 @@ dbdet_contour_ranker_process::execute()
   for(int i=0; i< vcl_min(nfrags, (int)rank.size()); ++i)
     disp[ri[i].second] = (ri[i].first >= thresh) ? true : false;
 
-  vcl_cout << "Max rank: (" << ri[0].first << ", " << ri[0].second << ") Min rank: (" << ri[ri.size()-1].first << ", " << ri[ri.size()-1].second << ")" << vcl_endl;
+  if (!ri.empty())
+    vcl_cout << "Max rank: (" << ri[0].first << ", " << ri[0].second << ") Min rank: (" << ri[ri.size()-1].first << ", " << ri[ri.size()-1].second << ")" << vcl_endl;
+  else
+    vcl_cout << "Max rank: (n/a) Min rank: (n/a); no curve fragments to rank" << vcl_endl;
 
   newCFG.clear();
   newCFG.resize(CFG.cFrags.size());

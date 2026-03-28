@@ -55,6 +55,15 @@
 
 int main(int argc, char *argv[]) {
 
+    if (argc < 6)
+    {
+      vcl_cerr << "Usage: " << argv[0]
+               << " image.jpg output.cem nContours e_sigma e_thresh\n"
+               << "  nContours: top contours to output (0 = all)\n"
+               << "  e_sigma, e_thresh: edge detector parameters\n";
+      return 1;
+    }
+
     // Let time how long this takes
     // Start timer
     vul_timer t;
@@ -63,12 +72,9 @@ int main(int argc, char *argv[]) {
     double e_sigma = 2;
     double e_thresh = 1;
 
-    //if(atoi(argv[0])>=3)
-    	nContours = atoi(argv[3]);
-    //if(atoi(argv[0])>=4)
-    	e_sigma = atof(argv[4]);
-    //if(atoi(argv[0])>=5)
-    	e_thresh = atof(argv[5]);
+    nContours = atoi(argv[3]);
+    e_sigma = atof(argv[4]);
+    e_thresh = atof(argv[5]);
 
 
 	vcl_cout<<"************* load in image *********"<<vcl_endl;
