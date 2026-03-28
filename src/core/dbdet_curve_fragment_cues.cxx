@@ -169,6 +169,12 @@ lateral_edge_sparsity_cue(
   assert(!use_dt());
 
   const dbdet_edgel_list &e = c.edgels;
+  if (npts == 0)
+  {
+    features[y_features::Y_LEN] = 0;
+    return 0.0;
+  }
+
   /*for (unsigned i=0; i < npts; ++i) {
     unsigned px = static_cast<unsigned>(e[i]->pt.x()+0.5);
     unsigned py = static_cast<unsigned>(e[i]->pt.y()+0.5);
@@ -209,23 +215,26 @@ lateral_edge_sparsity_cue(
     for(int j = 0; j < h; ++j)
       mask(i, j) = 0;
 
-  for(int k = 0; k < npts; ++k)
+  for (unsigned k = 0; k < npts; ++k)
   {
-    int px = static_cast<int>(e[k]->pt.x()+0.5);
-    int py = static_cast<int>(e[k]->pt.y()+0.5);
-    for(int i = vcl_max(px - static_cast<int>(nbr_width_), 0); i < vcl_min(w, 1 + px + static_cast<int>(nbr_width_)); i++)
-      for(int j = vcl_max(py - static_cast<int>(nbr_width_), 0); j < vcl_min(h, 1 + py + static_cast<int>(nbr_width_)); j++)
-        mask(i, j) = 1;
+    if (!e[k])
+      continue;
+    int px = static_cast<int>(e[k]->pt.x() + 0.5);
+    int py = static_cast<int>(e[k]->pt.y() + 0.5);
+    for (int ii = vcl_max(px - static_cast<int>(nbr_width_), 0); ii < vcl_min(w, 1 + px + static_cast<int>(nbr_width_)); ++ii)
+      for (int jj = vcl_max(py - static_cast<int>(nbr_width_), 0); jj < vcl_min(h, 1 + py + static_cast<int>(nbr_width_)); ++jj)
+        mask(ii, jj) = 1;
   }
 
-  for(int i = 0; i < npts; ++i)
+  //> Clear mask on actual curve pixels (same (x,y) per edgel; do not mix x from one edgel with y from another).
+  for (unsigned k = 0; k < npts; ++k)
   {
-    unsigned px = static_cast<unsigned>(e[i]->pt.x()+0.5);
-    for(int j = 0; j < npts; ++j)
-    {
-      unsigned py = static_cast<unsigned>(e[j]->pt.y()+0.5);
+    if (!e[k])
+      continue;
+    int px = static_cast<int>(e[k]->pt.x() + 0.5);
+    int py = static_cast<int>(e[k]->pt.y() + 0.5);
+    if (px >= 0 && px < w && py >= 0 && py < h)
       mask(px, py) = 0;
-    }
   }
 
   for(int i = 0; i < w; ++i)
