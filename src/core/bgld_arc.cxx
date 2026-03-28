@@ -5,15 +5,16 @@
 // by Kwun Han.
 
 #include "bgld_arc.h"
+#include <vcl_compiler.h>
 #include <vcl_cmath.h>
 #include <vcl_iostream.h>
 
 
 
 #if !VCL_STATIC_CONST_INIT_FLOAT_NO_DEFN
-const double  bgld_arc::near_zero_value
+VXL_CONSTEXPR_VAR double  bgld_arc::near_zero_value
       VCL_STATIC_CONST_INIT_FLOAT_DEFN(1.0e-8);
-const double bgld_arc::minimum_curvature
+VXL_CONSTEXPR_VAR double bgld_arc::minimum_curvature
       VCL_STATIC_CONST_INIT_FLOAT_DEFN(0.00260416);  //(1/384.0)
 #endif
 
