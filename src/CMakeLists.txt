@@ -29,14 +29,6 @@ IF(VXL_FOUND)
 	  	MSEL_img2CFs.cxx 
 	)
 
-	set( TCG_from_edge_sources
-	  	TCG_edges2TCG.cxx 
-	)
-
-	set( TCG_from_img_sources
-	  	TCG_img2TCG.cxx 
-	)
-
 	add_executable (dborl_compute_curve_frags ${dborl_edge_det_link_sources} )
 	target_link_libraries (dborl_compute_curve_frags core) 
 
@@ -45,12 +37,6 @@ IF(VXL_FOUND)
 
 	add_executable (MSEL_img2CFs ${MSEL_from_img_sources} )
 	target_link_libraries (MSEL_img2CFs core)
-
-	add_executable (TCG_edges2TCG ${TCG_from_edge_sources} )
-	target_link_libraries (TCG_edges2TCG core)
-
-	add_executable (TCG_img2TCG ${TCG_from_img_sources} )
-	target_link_libraries (TCG_img2TCG core)
 
 	add_subdirectory( core )
 	
