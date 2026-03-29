@@ -215,6 +215,7 @@ bool bsold_load_cem(vcl_vector< vsol_spatial_object_2d_sptr >& contours, vcl_str
     return bsold_load_cem_gzip(contours, filename);
 #else
     vcl_cerr << "Error: .gz compressed file was provided, but boost wasn't found\n";
+    return false;
 #endif
   } else
     return bsold_load_cem_ascii(contours, filename);
@@ -229,6 +230,7 @@ bool bsold_save_cem(vcl_vector< vsol_spatial_object_2d_sptr >& vsol_list, vcl_st
     return bsold_save_cem_gzip(vsol_list, filename);
 #else
     vcl_cerr << "Error: .gz compressed filename was provided, but boost wasn't found\n";
+    return false;
 #endif
   } else
     return bsold_save_cem_ascii(vsol_list, filename);
@@ -287,7 +289,7 @@ bool bsold_load_cem_ascii(vcl_vector< vsol_spatial_object_2d_sptr >& contours, v
       for (int j=0; j< numEdges; j++){
         //the rest should have data that goes into the current contour
         infp.getline(lineBuffer,1024);
-        sscanf(lineBuffer," [%d, %d]\t%f\t%f\t[%f, %f]\t%f\t%f",&(ix), &(iy),
+        sscanf(lineBuffer," [%d, %d]\t%lf\t%lf\t[%f, %f]\t%lf\t%lf",&(ix), &(iy),
               &(idir), &(iconf), &(x), &(y), &(dir), &(conf));
 
         //VJ's current CEM is in degrees rather than radians so need to convert
@@ -377,7 +379,7 @@ bool bsold_load_cem_gzip(vcl_vector< vsol_spatial_object_2d_sptr >& contours, vc
       for (int j=0; j< numEdges; j++){
         //the rest should have data that goes into the current contour
         infp.getline(lineBuffer,1024);
-        sscanf(lineBuffer," [%d, %d]\t%f\t%f\t[%f, %f]\t%f\t%f",&(ix), &(iy),
+        sscanf(lineBuffer," [%d, %d]\t%lf\t%lf\t[%f, %f]\t%lf\t%lf",&(ix), &(iy),
               &(idir), &(iconf), &(x), &(y), &(dir), &(conf));
 
         //VJ's current CEM is in degrees rather than radians so need to convert
