@@ -1,78 +1,125 @@
-# topological contour graph
+# Curve Fragments Extraction From an Image
 
-Author of this Release Package: 
-	Yuliang Guo (yuliang_guo@brown.edu)
-	This is multi-stage approach in extracting curve fragments features from image.
-	This package includes research code still under development. There are a lot redundent code included.
-	The evaluation result is not the same reported in the published papers.
+This repository hosts the code for contour (curve fragment) extraction from an image or a list of edges via a multi-stage approach. It takes either an image or a list of detected edges as input, and returns curve fragments represented as a sequence of ordered edges. See the reference papers below for more details of the methodology.
 
-Reference: 
-	"A Multi-Stage Approach to Curve Extraction", Y.Guo, N.Kumar, M.Narayanan and B.Kimia, ECCV 2014
-	"On Evaluating Methods for Recovering Image Curve Fragments", Y.Guo, B.Kimia, CVPRW 2012
-    	"No grouping left behind: From edges to curve fragments, Tamrakar and Kimia, ICCV 2007"
-
-
-### 1. Download VXL
-
+## Dependency: VXL
+This code has been tested using [VXL](https://github.com/vxl/vxl) version 1.18.0, and [VXL-1.18.0-patch](https://github.com/C-H-Chien/vxl). Other versions may also work but not yet tested. Follow the standard CMake build process with creating a `build` folder: 
 ```bash
-  mkdir vxl
-  git clone https://github.com/vxl/vxl.git vxl
+$ mkdir build && cd build
 ```
-
-### 2. Compile VXL
+Then build VXL with the following settings:
 ```bash
-  mkdir vxl-bin
-  cd ./vxl-bin
-  ccmake -D CMAKE_BUILD_TYPE=Release -D BUILD_SHARED_LIBS=ON -D VNL_CONFIG_LEGACY_METHODS=ON ../vxl
-  # set the BUILD_CONTRIB flag ON and hit 'c' (configure), make sure the BUILD_GEL flag is ON. RPL is problematic it is better BUILD_RPL is set OFF.
-  # press 'c' (configure) multiple times until 'g' (generate) appears
-  make -j4 -k   # compile in parallel and keep going past errors
-
-  # Don't worry about errors at this point. We will not use everything.
+$ cmake .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBOXM2_USE_VOLM=OFF \
+  -DBUILD_CONTRIB=ON \
+  -DBUILD_RPL=OFF \
+  -DBUILD_TESTING=OFF \
+  -DBUILD_CORE_VIDEO=OFF \
+  -DBUILD_CUL=OFF \
+  -DBUILD_DOCUMENTATION=OFF \
+  -DBUILD_FOR_VXL_DASHBOARD=OFF \
+  -DVNL_CONFIG_LEGACY_METHODS=ON \
+  -DVXL_FORCE_B3P_EXPAT=ON
 ```
-
-### 3. compile
+Alternatively, using `ccmake ..` would enable you to visualize and control all the settings. Once CMake files are generated, compile the code with
 ```bash
-	mkdir bin
-	cd ./bin
-	ccmake -D CMAKE_BUILD_TYPE=Release ../src
-	# type in the path of VXL_DIR as the path of vxl-bin folder made in step 2.
-  	# press 'c' (configure) multiple times until 'g' (generate) appears
-	make -j4 -k
-	# there are two excutables generated in bin
+$ make -k -j{nproc}
 ```
-### 4. Use of contour extraction (ECCV 2014)
+This enables continual compilation by ignoring any past errors arising from the `contrib` as well as many other scripts. Don't worry about errors at this point since we will not use everything. `{nproc}` can be any integer depending on the number of (CPU) cores you are using.
 
-	# Extraction contours from image 
-		e.g.	./bin/MSEL_img2CFs 10081.jpg 10081.cem 200 1.5 1
-	# This is a combination of edge-detection and contour extraction
-	# the edge detection integrated referst to: "No grouping left behind: From edges to curve fragments, Tamrakar and Kimia, ICCV 2007"
-	# Usage: ./bin/MSEL_img2CFs input_img_file output_cem_file nContours edge_sigma edge_thresh
-	# 	input_img_file: path of the input image file. Input image must be color.
-	#	output_cem_file: path of the output contour file, we define this type of file as ".cem".
-	#	nContours: number of contours to be outputed after ranking. If this is set to 0 or kept blank, it will output all the generated contours.
-	#	edge_sigma:  sigma parameter for the edge detection, deciding the scale of edge.
-	#	edge_thresh: gradient thresh for the edge detection, deciding the scale of edge.
+## How to Use the Code
+### Build and Compile
+Building the code in this repo also follows the standard CMake build process:
+```bash
+$ mkdir build && cd build
+$ ccmake ../src/ \
+	-D CMAKE_BUILD_TYPE=Release \
+	-D VXL_DIR=/PATH/TO/VXL/build/
+$ make -j4
+```
+Type in the path of `VXL_DIR` as the path of the VXL build folder you have made in the previous step. Once the compilation is done, you shall see three executables generated under `build`: `MSEL_edges2CFs`, `MSEL_img2CFs`, and `dborl_compute_curve_frags`.
 
-	# Extraction contours from edges 
-		e.g.	./bin/MSEL_edges2CFs 10081.jpg 10081.edg 10081.cem 200
-	# Suppose edges can be detected from third-part softwares, and can be saved in the same format as "10081.edg"
-	# Usage: ./bin/MSEL_edges2CFs input_img_file input_edg_file output_cem_file nContours
-	# 	input_img_file:	path of the input image file. Input image must be color.
-	# 	input_edg_file: path of the input edgemap file, which we define the type as ".edg".
-	#	output_cem_file: path of the output contour file, we define this type of file as ".cem".
-	#	nContours: number of contours to be outputed after ranking. If to output all the generated contours, set this to 0
+### Usage
+The three executables differ in the inputs and the process but they share the same library and symbolic edge linking (SEL). The output `XX.cem` file records all returned contours represented as a seuqence of ordered edges. Although the file extension is `.cem`, it can however be treated as a regular `.txt` file.
 
-### 5. Use of constructing TCG (latest 2018)
-	# Temporary usage:
-		scp bin/dborl_compute_curve_frags TCG_MATLAB_FOLDER/util/
-		then work from TCG_MATLAB_FOLDER/main_TCG.m
-	# INCOMPLETE pure c++: Extraction TCG from image 
-		e.g.	./bin/TCG_img2TCG 10081.jpg 10081.cem 200 1.5 1
-	# INCOMPLETE pure c++: Extraction TCG from edges 
-		e.g.	./bin/TCG_edges2TCG 10081.jpg 10081.edg 10081.cem 200
+| Executable | Required inputs | Pipeline (high level) |
+|------------|-----------------|------------------------|
+| `MSEL_img2CFs` | RGB image | Third-Order Edge Detection -> SEL -> Geometric Contour Break -> Graphical-Model Merge -> Contour Ranker -> Save CEM |
+| `MSEL_edges2CFs` | RGB image + edge file (`.edg`) | Load edge map from file -> SEL -> Geometric Contour Break -> Graphical-Model Merge -> Contour Ranker -> Save CEM |
+| `dborl_compute_curve_frags` | edge file (`.edg`) | Load edge map from file -> SEL -> Save CEM (No curve break / merge / rank) |
 
-### 6. Visualize contours using Matlab
+**Command-line quick reference** (from `build/`) you can use the examples under `example_data/`:
+- **`MSEL_img2CFs`**: `<image-name>.png <cem-name>.cem <nContours> <e_sigma> <e_thresh>`  
+  - `nContours`: number of returned contours after ranking. Set 0 if opting for returning all ranked contours. 
+  - `e_sigma`: Sigma parameter for the third-order edge detection.
+  - `e_thresh` Gradient threshold for the third-order edge detection. 
 
- 	use Matlab, demo_vis_io.m
+	Example:
+	```bash
+	$ ./build/MSEL_img2CFs example_data/cabinet.png example_data/cabinet.cem 200 1 1
+	```
 
+- **`MSEL_edges2CFs`**: `<image-name>.png <edge-name>.edg <cem-name>.cem <nContours>` 
+  - `<edge-name>.edg`: an edge file generated through third-order edge detection (you can use [this repository](https://github.com/C-H-Chien/Third-Order-Edge-Detector) to generate one) or a third-party edge detector with edges structured as an `.edg` file. Although the file extension is `.edg`, it can however be treated as a regular `.txt` file.
+  
+	Example:
+	```bash
+	$ ./build/MSEL_edges2CFs example_data/cabinet.png example_data/cabinet.edg example_data/cabinet.cem 200
+	```
+
+- **`dborl_compute_curve_frags`**: `<edge-name>.edg <cem-name>.cem`  
+  This is primarily used in the topological contour graph code. If you opt for curve fragments extraction only (without organizing the curve into a topological contour graph), then this executable can be ignored.
+
+## Visualization
+We provide a simple MATLAB code `demo_vis_io.m` for visualizing the generated curve fragments. Simply run that script with specified image and `cem` file.
+
+## Contributors
+The code was originally implemented by [Yuliang Guo](https://github.com/yuliangguo). It was updated (by fixing some memory leak issues), tested, and documented by [Chiang-Heng Chien](https://github.com/C-H-Chien).
+
+## References
+The main paper this code arises from is:
+```BibTeX
+@inproceedings{guo2014multi,
+  title={A multi-stage approach to curve extraction},
+  author={Guo, Yuliang and Kumar, Naman and Narayanan, Maruthi and Kimia, Benjamin},
+  booktitle={European Conference on Computer Vision},
+  pages={663--678},
+  year={2014},
+  organization={Springer}
+}
+```
+Below are papers that the multi-stage approach builds upon:
+```BibTex
+@inproceedings{guo2012evaluating,
+  title={On evaluating methods for recovering image curve fragments},
+  author={Guo, Yuliang and Kimia, Benjamin},
+  booktitle={2012 IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops},
+  pages={9--16},
+  year={2012},
+  organization={IEEE}
+}
+```
+```BibTex
+@inproceedings{tamrakar2007no,
+  title={No grouping left behind: From edges to curve fragments},
+  author={Tamrakar, Amir and Kimia, Benjamin B},
+  booktitle={2007 IEEE 11th International Conference on Computer Vision},
+  pages={1--8},
+  year={2007},
+  organization={IEEE}
+}
+```
+For third-order edge detection, refer the the following paper and its self-contained implementation [here](https://github.com/C-H-Chien/Third-Order-Edge-Detector):
+```BibTex
+@article{kimia2018differential,
+  title={Differential geometry in edge detection: accurate estimation of position, orientation and curvature},
+  author={Kimia, Benjamin B and Li, Xiaoyan and Guo, Yuliang and Tamrakar, Amir},
+  journal={IEEE transactions on pattern analysis and machine intelligence},
+  volume={41},
+  number={7},
+  pages={1573--1586},
+  year={2018},
+  publisher={IEEE}
+}
+```
