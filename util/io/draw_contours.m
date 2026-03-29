@@ -26,10 +26,9 @@ for i = 1:con_cnt
     end
 
     if (rand==1)
-        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color',colourmp(i,:), 'LineWidth', 2);
+        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color',colourmp(i,:), 'LineWidth', 3);
     else
-
-        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color', col, 'LineWidth', 2);
+        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color', col, 'LineWidth', 3);
 
     end
     
