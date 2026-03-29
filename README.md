@@ -33,10 +33,8 @@ This enables continual compilation by ignoring any past errors arising from the 
 Building the code in this repo also follows the standard CMake build process:
 ```bash
 $ mkdir build && cd build
-$ ccmake ../src/ \
-	-D CMAKE_BUILD_TYPE=Release \
-	-D VXL_DIR=/PATH/TO/VXL/build/
-$ make -j4
+$ ccmake ../src/ -D CMAKE_BUILD_TYPE=Release -D VXL_DIR=/PATH/TO/VXL/build/
+$ make -j{nproc}
 ```
 Type in the path of `VXL_DIR` as the path of the VXL build folder you have made in the previous step. Once the compilation is done, you shall see three executables generated under `build`: `MSEL_edges2CFs`, `MSEL_img2CFs`, and `dborl_compute_curve_frags`.
 
