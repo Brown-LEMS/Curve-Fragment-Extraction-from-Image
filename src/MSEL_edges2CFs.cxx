@@ -57,9 +57,16 @@ int main(int argc, char *argv[]) {
     // Start timer
     vul_timer t;
 
+    if (argc < 5) {
+      vcl_cerr << "Usage: " << argv[0]
+               << " img_file edg_file output_cem_file nContours" << vcl_endl;
+      vcl_cerr << "Error: missing required argument nContours (argv[4])."
+               << vcl_endl;
+      return 1;
+    }
+
     int nContours = 0;
-    //if(atoi(argv[0])>=4)
-    	nContours = atoi(argv[4]);
+    nContours = atoi(argv[4]);
 
 	vcl_cout<<"************* load in image *********"<<vcl_endl;
 	//load the input image
