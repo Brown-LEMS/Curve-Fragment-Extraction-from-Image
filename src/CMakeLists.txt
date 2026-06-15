@@ -7,6 +7,7 @@ FIND_PACKAGE(VXL)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_subdirectory(edge_detector)
 
 IF(VXL_FOUND)
     # include the standard VXL stuff

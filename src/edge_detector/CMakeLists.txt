@@ -12,11 +12,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS_DEBUG   "-Wall -Wextra -Wpedantic -g" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "" FORCE)
 
-set(SRC src/main.cpp src/detect.cpp)
+set(SRC main.cpp detect.cpp)
 
 find_package(OpenCV 4 REQUIRED)
 
 add_executable(${EXECUTABLE} ${SRC})
 target_include_directories(${EXECUTABLE} PRIVATE src)
-target_include_directories(${EXECUTABLE} PUBLIC include)
+target_include_directories(${EXECUTABLE} PUBLIC include/edge_detector)
 target_link_libraries(${EXECUTABLE} ${OpenCV_LIBS})
