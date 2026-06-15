@@ -1,0 +1,37 @@
+# build dirs
+cmake-build-*/
+build*/
+
+.cache*/
+
+compile_commands.json
+
+CMakeFiles/
+CMakeCache.txt
+
+model*
+out*
+
+__*
+
+# ide files
+.idea/
+*.iml
+.vscode*/
+.vs*/
+
+.venv*/
+.envrc
+
+.DS_Store
+Thumbs.db
+
+*.exe
+*.out
+*.app
+
+*.o
+*.obj
+*.bin
+
+*.tmp
