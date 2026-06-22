@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
              << vcl_endl;
     dbdet_sel_process sel_pro;
     //	set_process_parameters_of_bpro1(*params, sel_pro,
-    //params->tag_edge_linking_);
+    // params->tag_edge_linking_);
 
     // Before we start the process lets clean input output
     sel_pro.clear_input();
