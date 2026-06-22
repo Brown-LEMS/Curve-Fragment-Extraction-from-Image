@@ -18,5 +18,5 @@ find_package(OpenCV 4 REQUIRED)
 
 add_executable(${EXECUTABLE} ${SRC})
 target_include_directories(${EXECUTABLE} PRIVATE src)
-target_include_directories(${EXECUTABLE} PUBLIC include/edge_detector)
+target_include_directories(${EXECUTABLE} PUBLIC include)
 target_link_libraries(${EXECUTABLE} ${OpenCV_LIBS})
