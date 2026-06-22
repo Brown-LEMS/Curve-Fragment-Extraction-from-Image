@@ -21,19 +21,25 @@ IF(VXL_FOUND)
     MESSAGE("VXL_ROOT_SOURCE_DIR is ${VXL_ROOT_SOURCE_DIR}")
 
     set( dborl_edge_det_link_sources
-  dborl_edge_det_link_main.cxx
- )
+        dborl_edge_det_link_main.cxx
+        edge_detector/detect.cpp
+    )
 
     set( MSEL_from_edge_sources
     MSEL_edges2CFs.cxx
- )
+    )
 
     set( MSEL_from_img_sources
     MSEL_img2CFs.cxx
- )
+    )
+
+
+    find_package(OpenCV 4 REQUIRED)
 
     add_executable (dborl_compute_curve_frags ${dborl_edge_det_link_sources} )
     target_link_libraries (dborl_compute_curve_frags core)
+    target_include_directories(dborl_compute_curve_frags PUBLIC "edge_detector/include")
+    target_link_libraries(dborl_compute_curve_frags ${OpenCV_LIBS})
 
     add_executable (MSEL_edges2CFs ${MSEL_from_edge_sources} )
     target_link_libraries (MSEL_edges2CFs core)
