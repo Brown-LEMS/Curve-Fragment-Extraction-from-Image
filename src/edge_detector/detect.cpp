@@ -1,5 +1,4 @@
-#include "detect.hpp"
-
+#include "edge_detector/detect.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
 #include <opencv2/ximgproc.hpp>
