@@ -191,14 +191,14 @@ bool dbdet_sel_process::execute() {
     dbdet_curve_fragment_graph& CFG = output_sel->CFG();
 
     // different types of linkers depending on the curve model
-    typedef dbdet_sel<dbdet_simple_linear_curve_model> dbdet_sel_simple_linear;
-    typedef dbdet_sel<dbdet_linear_curve_model> dbdet_sel_linear;
-    typedef dbdet_sel<dbdet_CC_curve_model> dbdet_sel_CC;
-    typedef dbdet_sel<dbdet_CC_curve_model_new> dbdet_sel_CC_new;
-    typedef dbdet_sel<dbdet_CC_curve_model_perturbed> dbdet_sel_CC_perturbed;
-    typedef dbdet_sel<dbdet_CC_curve_model_3d> dbdet_sel_CC_3d;
-    typedef dbdet_sel<dbdet_ES_curve_model> dbdet_sel_ES;
-    typedef dbdet_sel<dbdet_ES_curve_model_perturbed> dbdet_sel_ES_perturbed;
+    using dbdet_sel_simple_linear = dbdet_sel<dbdet_simple_linear_curve_model>;
+    using dbdet_sel_linear = dbdet_sel<dbdet_linear_curve_model>;
+    using dbdet_sel_CC = dbdet_sel<dbdet_CC_curve_model>;
+    using dbdet_sel_CC_new = dbdet_sel<dbdet_CC_curve_model_new>;
+    using dbdet_sel_CC_perturbed = dbdet_sel<dbdet_CC_curve_model_perturbed>;
+    using dbdet_sel_CC_3d = dbdet_sel<dbdet_CC_curve_model_3d>;
+    using dbdet_sel_ES = dbdet_sel<dbdet_ES_curve_model>;
+    using dbdet_sel_ES_perturbed = dbdet_sel<dbdet_ES_curve_model_perturbed>;
 
     // start the timer
     vul_timer t;

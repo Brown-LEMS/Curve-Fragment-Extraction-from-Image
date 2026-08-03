@@ -41,7 +41,7 @@ class dbdet_load_edg_process : public bpro1_process {
     bool execute();
     bool finish() { return true; }
 
-    bool loadEDG(vcl_string filename);
+    bool loadEDG(vcl_string input_file);
 
   protected:
     int num_frames_;
