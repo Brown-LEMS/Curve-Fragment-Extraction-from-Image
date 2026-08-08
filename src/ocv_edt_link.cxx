@@ -1,4 +1,3 @@
-//:
 // \file
 // \brief Edge detection (OpenCV contrib structured edge detector) + symbolic
 //        edge linking (dbdet_sel_process), writing a .cem boundary fragment
@@ -40,8 +39,6 @@
 #include "core/dbdet_edgemap_storage.h"
 #include "core/dbdet_save_cem_process.h"
 #include "core/dbdet_sel_process.h"
-#include "core/dbdet_sel_storage.h"
-#include "core/dbdet_sel_storage_sptr.h"
 
 int main(int argc, char* argv[]) {
 
@@ -105,9 +102,9 @@ int main(int argc, char* argv[]) {
     vcl_cout << "Edge detection done." << vcl_endl;
 
     // diagnostics:
-    vcl_cout << "edges > 0:              " << cv::countNonZero(edges > 0.0f)
+    vcl_cout << "edges > 0:              " << cv::countNonZero(edges > 0.0F)
              << vcl_endl;
-    vcl_cout << "edges_nms > 0:          " << cv::countNonZero(edges_nms > 0.0f)
+    vcl_cout << "edges_nms > 0:          " << cv::countNonZero(edges_nms > 0.0F)
              << vcl_endl;
     vcl_cout << "edges_nms >= threshold: "
              << cv::countNonZero(edges_nms >= (float)threshold) << vcl_endl;
@@ -128,7 +125,7 @@ int main(int argc, char* argv[]) {
     input_edgemap->set_edgemap(EM);
 
     vcl_vector<bpro1_storage_sptr> edge_det_results;
-    edge_det_results.push_back(input_edgemap.as_pointer());
+    edge_det_results.emplace_back(input_edgemap.as_pointer());
 
     //******************** Edge Linking *********************************
     vcl_vector<bpro1_storage_sptr> el_results;
@@ -182,7 +179,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    double total_time = t.real() / 1000.0;
+    double total_time = static_cast<double>(t.real()) / 1000.0;
     t.mark();
     vcl_cout << vcl_endl;
     vcl_cout << "************ Time taken: " << total_time << " sec" << vcl_endl;
