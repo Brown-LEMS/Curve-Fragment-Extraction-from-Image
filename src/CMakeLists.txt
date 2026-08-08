@@ -6,6 +6,7 @@ FIND_PACKAGE(VXL)
 #FIND_PACKAGE(LEMS)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 add_subdirectory(edge_detector)
 
@@ -23,8 +24,13 @@ IF(VXL_FOUND)
     set( dborl_edge_det_link_sources
         dborl_edge_det_link_main.cxx
         edge_detector/detect.cpp
-        opencv_conversion.cpp
     )
+
+    set(ocv_edt_link_sources
+        ocv_edt_link.cxx
+        edge_detector/detect.cpp
+    )
+
 
     set( MSEL_from_edge_sources
     MSEL_edges2CFs.cxx
@@ -41,6 +47,12 @@ IF(VXL_FOUND)
     target_link_libraries (dborl_compute_curve_frags core)
     target_include_directories(dborl_compute_curve_frags PUBLIC "edge_detector/include" ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(dborl_compute_curve_frags ${OpenCV_LIBS})
+
+    add_executable (ocv_compute_curve_frags ${ocv_edt_link_sources} )
+    target_link_libraries (ocv_compute_curve_frags core)
+    target_include_directories(ocv_compute_curve_frags  PUBLIC "edge_detector/include" ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(ocv_compute_curve_frags ${OpenCV_LIBS})
+
 
     add_executable (MSEL_edges2CFs ${MSEL_from_edge_sources} )
     target_link_libraries (MSEL_edges2CFs core)
