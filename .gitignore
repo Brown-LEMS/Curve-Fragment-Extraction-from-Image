@@ -9,7 +9,9 @@ compile_commands.json
 CMakeFiles/
 CMakeCache.txt
 
-model*
+# if model shouldn't be included:
+# model*
+
 out*
 
 __*
