@@ -23,8 +23,8 @@
 //     edgemap_from_opencv() to skip the text round-trip entirely.
 // \endverbatim
 
+#include <string>
 #include <vcl_iostream.h>
-#include <vcl_string.h>
 #include <vcl_vector.h>
 #include <vul/vul_timer.h>
 
@@ -40,35 +40,54 @@
 #include "core/dbdet_save_cem_process.h"
 #include "core/dbdet_sel_process.h"
 
+bool ends_with(const std::string& str, const std::string& suffix) {
+    if (suffix.size() > str.size())
+        return false;
+
+    // Compare the end portion of 'str' with 'suffix'
+    return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 int main(int argc, char* argv[]) {
 
     if (argc < 4) {
         vcl_cerr << "Usage: " << argv[0]
                  << " <input_image> <structured_edge_model.yml.gz> "
-                    "<output.cem> [threshold=0.1]"
-                 << vcl_endl;
+                    "<output.cem> [output.edg] [threshold=0.1]"
+                 << '\n';
         return 1;
     }
 
-    const vcl_string input_image_path = argv[1];
-    const vcl_string model_path = argv[2];
-    const vcl_string output_file = argv[3];
-    const double threshold = (argc > 4) ? atof(argv[4]) : 0.1;
+    const std::string input_image_path = argv[1];
+    const std::string model_path = argv[2];
+    const std::string output_cem_file = argv[3];
+    std::string output_edg_file{};
+    if (argc > 4 && ends_with(argv[4], ".edg")) {
+        output_edg_file = argv[4];
+    }
+
+    double threshold = 0.1;
+
+    if (output_edg_file.empty() && argc == 5) {
+        threshold = atof(argv[4]);
+    } else if (argc == 6) {
+        threshold = atof(argv[5]);
+    }
 
     // Let time how long this takes
     vul_timer t;
 
     //******************** OpenCV Structured Edge Detection ***************
-    vcl_cout << "************* Detect Edges (OpenCV) *********" << vcl_endl;
+    vcl_cout << "************* Detect Edges (OpenCV) *********" << '\n';
 
     cv::Mat image = cv::imread(input_image_path, cv::IMREAD_COLOR);
     if (image.empty()) {
         vcl_cerr << "ERROR: could not read input image " << input_image_path
-                 << vcl_endl;
+                 << '\n';
         return 1;
     }
     if (model_path.empty()) {
-        vcl_cerr << "ERROR: empty model name" << vcl_endl;
+        vcl_cerr << "ERROR: empty model name" << '\n';
         return 1;
     }
 
@@ -81,7 +100,7 @@ int main(int argc, char* argv[]) {
         cv::ximgproc::createStructuredEdgeDetection(model_path);
     if (pDollar.empty()) {
         vcl_cerr << "ERROR: could not load structured edge model " << model_path
-                 << vcl_endl;
+                 << '\n';
         return 1;
     }
 
@@ -99,27 +118,33 @@ int main(int argc, char* argv[]) {
     cv::Mat edges_nms;
     pDollar->edgesNms(edges, orientation_map, edges_nms, 2, 0, 1, true);
 
-    vcl_cout << "Edge detection done." << vcl_endl;
+    vcl_cout << "Edge detection done." << '\n';
 
     // diagnostics:
     vcl_cout << "edges > 0:              " << cv::countNonZero(edges > 0.0F)
-             << vcl_endl;
+             << '\n';
     vcl_cout << "edges_nms > 0:          " << cv::countNonZero(edges_nms > 0.0F)
-             << vcl_endl;
+             << '\n';
     vcl_cout << "edges_nms >= threshold: "
-             << cv::countNonZero(edges_nms >= (float)threshold) << vcl_endl;
+             << cv::countNonZero(edges_nms >= (float)threshold) << '\n';
+
+    if (output_edg_file.length()) {
+        dbdet_cv_bridge::write_edg_v3(output_edg_file, edges_nms,
+                                      orientation_map, threshold,
+                                      /*orientation_is_normal=*/false);
+    }
 
     //******************** Build dbdet_edgemap in memory *******************
-    vcl_cout << "************* Build dbdet_edgemap *********" << vcl_endl;
+    vcl_cout << "************* Build dbdet_edgemap *********" << '\n';
 
     // TODO: computeOrientation() returns the normal (gradient) direction,
     // not the curve tangent that dbdet_edgel::tangent expects, so verify
     // this empirically against linked output and flip
     // orientation_is_normal if fragments come out rotated 90 degrees.
     dbdet_edgemap_sptr EM = dbdet_cv_bridge::edgemap_from_opencv(
-        edges_nms, orientation_map, threshold, /*orientation_is_normal=*/true);
+        edges_nms, orientation_map, threshold, /*orientation_is_normal=*/false);
 
-    vcl_cout << "N edgels: " << EM->num_edgels() << vcl_endl;
+    vcl_cout << "N edgels: " << EM->num_edgels() << '\n';
 
     dbdet_edgemap_storage_sptr input_edgemap = dbdet_edgemap_storage_new();
     input_edgemap->set_edgemap(EM);
@@ -129,8 +154,7 @@ int main(int argc, char* argv[]) {
 
     //******************** Edge Linking *********************************
     vcl_vector<bpro1_storage_sptr> el_results;
-    vcl_cout << "************ Symbolic Edge Linking     ************"
-             << vcl_endl;
+    vcl_cout << "************ Symbolic Edge Linking     ************" << '\n';
     dbdet_sel_process sel_pro;
 
     sel_pro.clear_input();
@@ -149,17 +173,17 @@ int main(int argc, char* argv[]) {
 
     if (el_results.size() != 1) {
         vcl_cerr << "Process output does not contain a sel data structure"
-                 << vcl_endl;
+                 << '\n';
         return 1;
     }
 
     //******************** Save Contours  *********************************
-    vcl_cout << "************ Saving Contours  ************" << vcl_endl;
+    vcl_cout << "************ Saving Contours  ************" << '\n';
 
     bool write_status(false);
-    vcl_cout << "output: " << output_file << vcl_endl;
+    vcl_cout << "output: " << output_cem_file << '\n';
 
-    bpro1_filepath output(output_file, ".cem");
+    bpro1_filepath output(output_cem_file, ".cem");
 
     dbdet_save_cem_process save_cem_pro;
     save_cem_pro.parameters()->set_value("-cem_filename", output);
@@ -175,17 +199,14 @@ int main(int argc, char* argv[]) {
     save_cem_pro.clear_output();
 
     if (!write_status) {
-        vcl_cerr << "ERROR: failed to write " << output_file << vcl_endl;
+        vcl_cerr << "ERROR: failed to write " << output_cem_file << '\n';
         return 1;
     }
 
     double total_time = static_cast<double>(t.real()) / 1000.0;
     t.mark();
-    vcl_cout << vcl_endl;
-    vcl_cout << "************ Time taken: " << total_time << " sec" << vcl_endl;
-
-    vcl_cerr.flush();
-    vcl_cout.flush();
+    vcl_cout << '\n';
+    vcl_cout << "************ Time taken: " << total_time << " sec" << '\n';
 
     return 0;
 }

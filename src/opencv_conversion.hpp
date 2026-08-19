@@ -25,23 +25,11 @@ inline double wrap0to2pi(double a) {
     return a;
 }
 
-// -----------------------------------------------------------------------
-// Path 1: write a .edg v3.0 file
-// -----------------------------------------------------------------------
-//
-// edges:       CV_32F, single channel, values roughly in [0,1] (edge
-//              strength / confidence). Typically the output of
-//              StructuredEdgeDetection::detectEdges(), ideally passed
-//              through ximgproc::edgesNms() first so only local maxima
-//              survive -- otherwise you'll get a solid blob of "edgels"
-//              a few pixels wide around every real edge, which will choke
-//              curvelet grouping.
-// orientation: CV_32F, single channel, radians. Output of
-//              computeOrientation(). Pass an empty Mat if you don't have
-//              one -- direction will be written as 0 for every edgel
-//              (not recommended: dbdet's curve models rely heavily on
-//              orientation for grouping).
-// threshold:   minimum edge strength to keep a pixel as an edgel.
+// Writes edges to a .edg file
+// edges:       edgemap from OpenCV
+// orientation:
+// threshold:   minimum edge strength to keep a pixel as an
+// edgel.
 //
 // Returns false if the file couldn't be opened for writing.
 static inline bool write_edg_v3(const std::string& filename,
@@ -86,12 +74,9 @@ static inline bool write_edg_v3(const std::string& filename,
     if (!out)
         return false;
 
-    // Mirror dbdet_save_edg_ascii()'s exact line layout -- the loader's
-    // header-reading loop only reads the first 9 lines, so keep this
-    // structure intact if you ever change it.
     out << "# EDGE_MAP v3.0" << "\n\n";
     out << "# Format :  [Pixel_Pos]  Pixel_Dir Pixel_Conf  [Sub_Pixel_Pos] "
-           "Sub_Pixel_Dir Sub_Pixel_Conf Uncer"
+           "Sub_Pixel_Dir Sub_Pixel_Conf Sub_Pixel_Conf"
         << "\n\n";
     out << "WIDTH=" << edges.cols << "\n";
     out << "HEIGHT=" << edges.rows << "\n";
@@ -99,11 +84,7 @@ static inline bool write_edg_v3(const std::string& filename,
 
     out << std::fixed << std::setprecision(6);
     for (const auto& e : pts) {
-        // No true sub-pixel localization is done here (x,y == ix,iy). If
-        // you have a sub-pixel refined position -- e.g. from a parabolic
-        // fit of edge strength along the gradient direction around
-        // (ix,iy) -- substitute it for the second [x, y] pair below. This
-        // matters a lot for the CC/ES curve models' accuracy.
+        // No true sub-pixel localization is done here (x,y == ix,iy).
         out << "[" << e.ix << ", " << e.iy << "]    " << e.dir << " " << e.conf
             << "  "
             << "[" << static_cast<double>(e.ix) << ", "
