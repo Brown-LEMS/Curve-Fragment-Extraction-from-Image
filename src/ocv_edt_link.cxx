@@ -39,14 +39,6 @@
 #include "core/dbdet_save_cem_process.h"
 #include "core/dbdet_sel_process.h"
 
-bool ends_with(const std::string& str, const std::string& suffix) {
-    if (suffix.size() > str.size())
-        return false;
-
-    // Compare the end portion of 'str' with 'suffix'
-    return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
-
 [[nodiscard]] static cv::Mat
 detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
                         const cv::Mat& image_float,
@@ -105,7 +97,7 @@ int main(int argc, char* argv[]) {
     const std::string model_path = argv[2];
     const std::string output_cem_file = argv[3];
     std::string output_edg_file{};
-    if (argc > 4 && ends_with(argv[4], ".edg")) {
+    if (argc > 4 && std::string(argv[4]).ends_with(".edg")) {
         output_edg_file = argv[4];
     }
 
