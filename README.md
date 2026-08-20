@@ -78,7 +78,7 @@ The three executables differ in the inputs and the process but they share the sa
 We provide a simple MATLAB code `demo_vis_io.m` for visualizing the generated curve fragments. Simply run that script with specified image and `cem` file.
 
 ## Contributors
-The code was originally implemented by [Yuliang Guo](https://github.com/yuliangguo). It was updated (by fixing some memory leak issues), tested, and documented by [Chiang-Heng Chien](https://github.com/C-H-Chien).
+The code was originally implemented by [Yuliang Guo](https://github.com/yuliangguo). It was updated (by fixing some memory leak issues), tested, and documented by [Chiang-Heng Chien](https://github.com/C-H-Chien). Additional changes and the code for `ocv_compute_curve_frags` was made by [Zach Mahan](https://github.com/zachMahan64).
 
 ## References
 The main paper this code arises from is:
