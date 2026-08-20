@@ -236,6 +236,8 @@ int main(int argc, char* argv[]) {
     //******************** Save Contours  *********************************
     vcl_cout << "************ Saving Contours  ************" << '\n';
 
+    dbdet_cv_bridge::create_file_recursive_and_open(output_cem_file);
+
     bool write_status(false);
     vcl_cout << "output: " << output_cem_file << '\n';
 

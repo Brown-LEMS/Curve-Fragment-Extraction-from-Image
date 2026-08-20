@@ -16,9 +16,25 @@
 
 namespace dbdet_cv_bridge {
 
+static inline std::ofstream create_file_recursive_and_open(
+    const std::filesystem::path& file_path,
+    std::ios_base::openmode mode = std::ios_base::out) {
+    if (auto parent = file_path.parent_path(); !parent.empty()) {
+        std::filesystem::create_directories(parent);
+    }
+    return std::ofstream(file_path, mode);
+}
+
+static inline void
+create_file_recursive(const std::filesystem::path& file_path) {
+    if (auto parent = file_path.parent_path(); !parent.empty()) {
+        std::filesystem::create_directories(parent);
+    }
+}
+
 // Wrap an angle into [0, 2*pi) -- matches dbdet_angle0To2Pi() convention
 // used internally by dbdet_edgel's constructor for `tangent`.
-inline double wrap0to2pi(double a) {
+static inline double wrap0to2pi(double a) {
     a = std::fmod(a, 2.0 * CV_PI);
     if (a < 0)
         a += 2.0 * CV_PI;
@@ -70,7 +86,7 @@ static inline bool write_edg_v3(const std::string& filename,
         }
     }
 
-    std::ofstream out(filename);
+    std::ofstream out{create_file_recursive_and_open(filename)};
     if (!out)
         return false;
 
