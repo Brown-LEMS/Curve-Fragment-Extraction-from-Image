@@ -47,10 +47,10 @@ bool ends_with(const std::string& str, const std::string& suffix) {
     return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-[[nodiscard]] static cv::Mat detect_edges_multiscale(
-    cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
-    const cv::Mat& image_float,
-    const std::vector<double>& scales = {.5, .75, 1.0, 1.5, 2.0}) {
+[[nodiscard]] static cv::Mat
+detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
+                        const cv::Mat& image_float,
+                        const std::vector<double>& scales = {.5, 1.0, 2.0}) {
 
     cv::Mat accum = cv::Mat::zeros(image_float.size(), CV_32F);
 
