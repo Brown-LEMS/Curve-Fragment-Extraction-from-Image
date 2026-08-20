@@ -82,7 +82,10 @@ static inline bool write_edg_v3(const std::string& filename,
             }
             dir = wrap0to2pi(dir);
 
-            pts.push_back({x, y, dir, static_cast<double>(conf)});
+            pts.push_back({.ix = x,
+                           .iy = y,
+                           .dir = dir,
+                           .conf = static_cast<double>(conf)});
         }
     }
 
@@ -148,11 +151,10 @@ edgemap_from_opencv(const cv::Mat& edges,
                                      static_cast<double>(y)), // sub-pixel pos
                 dir,                                          // tangent
                 static_cast<double>(conf),                    // strength
-                0.0,                                          // deriv
-                0.0);                                         // uncertainty
+                0.0,  // deriv, @TODO perhaps set
+                0.0); // uncertainty
 
-            // insert(e, ix, iy) buckets it into the grid cell, appends to
-            // EM->edgels, assigns e->id, and sets e->gpt -- all at once.
+            // insert(e, ix, iy) buckets it into the grid cell
             EM->insert(e, x, y);
         }
     }
