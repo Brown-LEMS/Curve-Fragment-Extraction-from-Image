@@ -1,20 +1,19 @@
 // \file
 // \brief Edge detection (OpenCV contrib structured edge detector) + symbolic
 //        edge linking (dbdet_sel_process), writing a .cem boundary fragment
-//        map -- the OpenCV-native replacement for the old .edg-file-based
+//        map - the OpenCV-native replacement for the old .edg-file-based
 //        main.cxx.
 //
 //        Usage:
 //          main <input_image> <structured_edge_model.yml.gz> <output.cem>
-//          [threshold]
+//          <output.edg> [threshold]
 //
-//        input_image             -- any image cv::imread can read
-//        structured_edge_model   -- the pretrained model for
+//        input_image             - any image cv::imread can read
+//        structured_edge_model   - the pretrained model for
 //                                    cv::ximgproc::createStructuredEdgeDetection()
 //                                    (e.g. model.yml.gz from opencv_extra)
-//        output.cem              -- where the linked curve fragment map goes
-//        threshold                -- optional edge-strength cutoff in [0,1],
-//                                    default 0.1
+//        output.cem              - where the linked curve fragment map goes
+//        threshold               - optional edge-strength cutoff in [0,1]
 //
 // \verbatim
 //   Modifications
@@ -48,10 +47,10 @@ bool ends_with(const std::string& str, const std::string& suffix) {
     return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-[[nodiscard]] static cv::Mat
-detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
-                        const cv::Mat& image_float,
-                        const std::vector<double>& scales = {0.5, 1.0, 2.0}) {
+[[nodiscard]] static cv::Mat detect_edges_multiscale(
+    cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
+    const cv::Mat& image_float,
+    const std::vector<double>& scales = {.5, .75, 1.0, 1.5, 2.0}) {
 
     cv::Mat accum = cv::Mat::zeros(image_float.size(), CV_32F);
 
@@ -66,12 +65,11 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
         cv::Mat e_resized;
         cv::resize(e, e_resized, image_float.size(), 0, 0, cv::INTER_LINEAR);
 
-        accum += e_resized;
+        cv::max(accum, e_resized,
+                accum); // max accum to try to get as much signal as possible
     }
-    accum /= static_cast<float>(scales.size());
     return accum;
 }
-
 [[nodiscard]] cv::Mat smooth_orientation(const cv::Mat& orientation,
                                          int ksize = 5) {
     CV_Assert(orientation.type() == CV_32F);
@@ -111,7 +109,7 @@ int main(int argc, char* argv[]) {
         output_edg_file = argv[4];
     }
 
-    double threshold = 0.05;
+    double threshold = 0.1;
 
     if (output_edg_file.empty() && argc == 5) {
         threshold = atof(argv[4]);
@@ -152,6 +150,9 @@ int main(int argc, char* argv[]) {
     cv::Mat edges =
         detect_edges_multiscale(p_dollar, image); // CV_32FC1, values in [0,1]
 
+    // boost faint edges
+    // cv::pow(edges, 0.8, edges);
+
     // computes orientation from edge map
     cv::Mat orientation_map;
     p_dollar->computeOrientation(edges, orientation_map);
@@ -162,7 +163,8 @@ int main(int argc, char* argv[]) {
     // this, dbdet_sel_process's curvelet grouping chokes on blobs of
     // edgels a few pixels wide around every real edge.
     cv::Mat edges_nms;
-    p_dollar->edgesNms(edges, orientation_map, edges_nms, 2, 0, 1, true);
+    p_dollar->edgesNms(edges, orientation_map, edges_nms,
+                       /* 2 might be better here */ 1, 0, 1, true);
 
     vcl_cout << "Edge detection done." << '\n';
 
