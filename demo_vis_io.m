@@ -4,8 +4,12 @@ img = imread('example_data/cabinet.png');
 [h,w,~]= size(img);
 
 % load in edges and contours
-[edges, edgemap, thetamap] = load_edg('example_data/cabinet.edg');
-[CEM, edges, cfrags_idx] = load_contours('example_data/cabinet.cem');
+% [edges, edgemap, thetamap] = load_edg('example_data/cabinet.edg');
+% [CEM, edges, cfrags_idx] = load_contours('example_data/cabinet.cem');
+
+[edges, edgemap, thetamap] = load_edg('out.edg');
+[CEM, edges, cfrags_idx] = load_contours('out.cem');
+
 
 % visualize edges
 figure(1);
