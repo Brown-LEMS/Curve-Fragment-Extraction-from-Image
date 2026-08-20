@@ -28,11 +28,6 @@ This enables continual compilation by ignoring any past errors arising from the 
 1. Install or build [OpenCV4](https://github.com/opencv/opencv) with [OpenCV4 Contribution](https://github.com/opencv/opencv_contrib) (build directions are in the latter)
     - Before building, make sure (using a package manager or some other method) that `libgtk2.0-dev` is installed on Debian/Ubuntu or `gtk2-devel` on Fedora. `pkg-config` must also be installed.
 3. Download the Structured Forest Edge model from [here](https://github.com/opencv/opencv_extra/blob/master/testdata/cv/ximgproc/model.yml.gz)
-4. This executable runs a demo either outputting edges to a file or displaying them on a window. Usage (argument order must match):
-```bash
-# to output edges to a file:
-$ ./build/edge_detector/edt -m <model_name> -i <input_img> -o <output_name>
-
 # show on window
 $ ./build/edge_detector/edt -m <model_name> -i <input_img> -s
 ```
@@ -73,8 +68,11 @@ The three executables differ in the inputs and the process but they share the sa
 	$ ./build/MSEL_edges2CFs example_data/cabinet.png example_data/cabinet.edg example_data/cabinet.cem 200
 	```
 
-- **`dborl_compute_curve_frags`**: `<edge-name>.edg <cem-name>.cem`
+- **`dborl_compute_curve_frags`**: `<edge-name>.edg <output-cem-name>.cem`
   This is primarily used in the topological contour graph code. If you opt for curve fragments extraction only (without organizing the curve into a topological contour graph), then this executable can be ignored.
+
+- **`ocv_compute_curve_frags`**: `<image-name> <output-cem-name>.cem [<output-edg-name>.edg] [threshold=0.1]`
+    - This is a replacement for `dborl_compute_curve_frags` that uses a built-in OpenCV Structured Forest Edge detector. See above for usage; the executable needs an image, an output `.cem` file, and optionally a `.edg` output file, which is helpful for visualizing and testing the edge detector seperate from the `.cem` curve fragment output. Additionally, an optional threshold can be specified (default is 0.1 if cli argument is elided) that determines at what intensity a pixel should be recorded as an edgel. Leaving this at 0.1 is generally good, although lowering this can reduce noise and raising it can boost the edge detector's sensitivity.
 
 ## Visualization
 We provide a simple MATLAB code `demo_vis_io.m` for visualizing the generated curve fragments. Simply run that script with specified image and `cem` file.
