@@ -38,14 +38,11 @@
 // #include "dbdet_contour_tracer_process.h"
 // #include "dbdet_prune_curves_process.h"
 // #include "dbdet_save_edg_process.h"
-#include "core/dbdet_edgemap_storage.h"
 #include "core/dbdet_load_edg_process.h"
 // #include "dbdet_save_cvlet_map_process.h"
 // #include "dbdet_load_cem_process.h"
 #include "core/dbdet_save_cem_process.h"
 // #include "dbdet_prune_fragments_Logistic_Regression.h"
-#include "core/dbdet_sel_storage.h"
-#include "core/dbdet_sel_storage_sptr.h"
 
 int main(int argc, char* argv[]) {
 
@@ -146,7 +143,7 @@ int main(int argc, char* argv[]) {
     save_cem_pro.clear_input();
     save_cem_pro.clear_output();
 
-    double vox_time = t.real() / 1000.0;
+    double vox_time = static_cast<double>(t.real()) / 1000.0;
     t.mark();
     vcl_cout << vcl_endl;
     vcl_cout << "************ Time taken: " << vox_time << " sec" << vcl_endl;
