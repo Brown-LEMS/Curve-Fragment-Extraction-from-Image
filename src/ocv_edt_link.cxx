@@ -196,7 +196,10 @@ int main(int argc, char* argv[]) {
     // the edgemap has no real per-edgel uncertainty (edgemap_from_opencv
     // sets uncertainty=0.0), so force fixed -dx/-dt tolerances instead
     // of "adaptive" per-edgel uncertainty.
-    sel_pro.parameters()->set_value("-badap_uncer", false);
+    //
+    // in practice, tho, changing this doesn't look like it does anything, so
+    // leave this commented out for noe
+    // sel_pro.parameters()->set_value("-badap_uncer", false);
 
     // loosened for pixel-quantized OpenCV positions + noisier orientation,
     // vs. defaults tuned for subpixel third-order detector output.
