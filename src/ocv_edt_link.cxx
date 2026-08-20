@@ -183,10 +183,6 @@ int main(int argc, char* argv[]) {
     //******************** Build dbdet_edgemap in memory *******************
     vcl_cout << "************* Build dbdet_edgemap *********" << '\n';
 
-    // TODO: computeOrientation() returns the normal (gradient) direction,
-    // not the curve tangent that dbdet_edgel::tangent expects, so verify
-    // this empirically against linked output and flip
-    // orientation_is_normal if fragments come out rotated 90 degrees.
     dbdet_edgemap_sptr EM = dbdet_cv_bridge::edgemap_from_opencv(
         edges_nms, orientation_map, threshold, /*orientation_is_normal=*/true);
 
