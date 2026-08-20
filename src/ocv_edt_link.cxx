@@ -73,26 +73,24 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
 }
 
 [[nodiscard]] cv::Mat smooth_orientation(const cv::Mat& orientation,
-                                         int ksize = 3) {
-    cv::Mat sin_o;
-    cv::Mat cos_o;
-    cv::Mat s(orientation.size(), CV_32F);
-    cv::Mat c(orientation.size(), CV_32F);
-    for (int y = 0; y < orientation.rows; ++y)
-        for (int x = 0; x < orientation.cols; ++x) {
-            float a = orientation.at<float>(y, x);
-            s.at<float>(y, x) = std::sin(a);
-            c.at<float>(y, x) = std::cos(a);
-        }
-    cv::GaussianBlur(s, s, cv::Size(ksize, ksize), 0);
-    cv::GaussianBlur(c, c, cv::Size(ksize, ksize), 0);
+                                         int ksize = 5) {
+    CV_Assert(orientation.type() == CV_32F);
 
-    cv::Mat out(orientation.size(), CV_32F);
-    for (int y = 0; y < orientation.rows; ++y)
-        for (int x = 0; x < orientation.cols; ++x)
-            out.at<float>(y, x) =
-                std::atan2(s.at<float>(y, x), c.at<float>(y, x));
-    return out;
+    cv::Mat mag = cv::Mat::ones(orientation.size(), CV_32F);
+    cv::Mat cos_o;
+    cv::Mat sin_o;
+    cv::polarToCart(mag, orientation, cos_o,
+                    sin_o); // vectorized angle->(cos,sin)
+
+    cv::GaussianBlur(cos_o, cos_o, cv::Size(ksize, ksize), 0);
+    cv::GaussianBlur(sin_o, sin_o, cv::Size(ksize, ksize), 0);
+
+    cv::Mat mag_out;
+    cv::Mat angle_out;
+    cv::cartToPolar(
+        cos_o, sin_o, mag_out,
+        angle_out); // vectorized (cos,sin)->angle, radians in [0, 2pi)
+    return angle_out;
 }
 
 int main(int argc, char* argv[]) {
@@ -157,6 +155,7 @@ int main(int argc, char* argv[]) {
     // computes orientation from edge map
     cv::Mat orientation_map;
     p_dollar->computeOrientation(edges, orientation_map);
+    orientation_map = smooth_orientation(orientation_map);
 
     // suppress edges -- thin the edge response down to (approximately)
     // single-pixel-wide ridges before handing it to the linker. Without
@@ -178,7 +177,7 @@ int main(int argc, char* argv[]) {
     if (output_edg_file.length()) {
         dbdet_cv_bridge::write_edg_v3(output_edg_file, edges_nms,
                                       orientation_map, threshold,
-                                      /*orientation_is_normal=*/false);
+                                      /*orientation_is_normal=*/true);
     }
 
     //******************** Build dbdet_edgemap in memory *******************
@@ -189,7 +188,7 @@ int main(int argc, char* argv[]) {
     // this empirically against linked output and flip
     // orientation_is_normal if fragments come out rotated 90 degrees.
     dbdet_edgemap_sptr EM = dbdet_cv_bridge::edgemap_from_opencv(
-        edges_nms, orientation_map, threshold, /*orientation_is_normal=*/false);
+        edges_nms, orientation_map, threshold, /*orientation_is_normal=*/true);
 
     vcl_cout << "N edgels: " << EM->num_edgels() << '\n';
 
