@@ -28,9 +28,6 @@ This enables continual compilation by ignoring any past errors arising from the 
 1. Install or build [OpenCV4](https://github.com/opencv/opencv) with [OpenCV4 Contribution](https://github.com/opencv/opencv_contrib) (build directions are in the latter)
     - Before building, make sure (using a package manager or some other method) that `libgtk2.0-dev` is installed on Debian/Ubuntu or `gtk2-devel` on Fedora. `pkg-config` must also be installed.
 3. Download the Structured Forest Edge model from [here](https://github.com/opencv/opencv_extra/blob/master/testdata/cv/ximgproc/model.yml.gz)
-# show on window
-$ ./build/edge_detector/edt -m <model_name> -i <input_img> -s
-```
 
 ## How to Use the Code
 ### Build and Compile
