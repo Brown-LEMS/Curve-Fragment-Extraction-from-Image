@@ -200,9 +200,8 @@ edgemap_from_opencv(const cv::Mat& edges_nms, const cv::Mat& raw_edges,
                 py += off.y;
             }
 
-            auto* e = new dbdet_edgel(
-                vgl_point_2d<double>(px, py), // now genuinely sub-pixel
-                dir, static_cast<double>(conf), 0.0, 0.0);
+            auto* e = new dbdet_edgel(vgl_point_2d<double>(px, py), // sub-pixel
+                                      dir, static_cast<double>(conf), 0.0, 0.0);
 
             EM->insert(e, x, y); // grid bucket stays at the integer pixel
         }
