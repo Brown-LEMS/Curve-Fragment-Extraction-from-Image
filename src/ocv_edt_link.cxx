@@ -39,32 +39,6 @@
 #include "core/dbdet_save_cem_process.h"
 #include "core/dbdet_sel_process.h"
 
-// detects edges on multiple scales taking the max prob for a given point among
-// scales
-[[nodiscard]] static cv::Mat detect_edges_multiscale_max(
-    cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
-    const cv::Mat& image_float,
-    const std::vector<double>& scales = {.25, .75, 1.0, 1.5, 2.0}) {
-
-    cv::Mat accum = cv::Mat::zeros(image_float.size(), CV_32F);
-
-    for (double s : scales) {
-        cv::Mat scaled;
-        cv::resize(image_float, scaled, cv::Size(), s, s,
-                   s < 1.0 ? cv::INTER_AREA : cv::INTER_LINEAR);
-
-        cv::Mat e;
-        pDollar->detectEdges(scaled, e);
-
-        cv::Mat e_resized;
-        cv::resize(e, e_resized, image_float.size(), 0, 0, cv::INTER_LINEAR);
-
-        cv::max(accum, e_resized,
-                accum); // max accum to try to get as much signal as possible
-    }
-    return accum;
-}
-
 inline bool
 equal(const double lhs, const double rhs,
       const double epsilon = std::numeric_limits<double>::epsilon()) {
@@ -76,7 +50,7 @@ equal(const double lhs, const double rhs,
 [[nodiscard]] static cv::Mat
 detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
                         const cv::Mat& image_float) {
-    const std::array scales = {.25, .5, .75, 1.0, 1.5, 2.0, 3.0};
+    const std::array scales = {.25, .5, 1.0, 2.0, 4.0};
     cv::Mat av_accum = cv::Mat::zeros(image_float.size(), CV_32F);
     cv::Mat max_accum = cv::Mat::zeros(image_float.size(), CV_32F);
     for (double s : scales) {
@@ -94,8 +68,8 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
         av_accum += e_resized; // sum across scales, averaged below
     }
     av_accum /= static_cast<float>(scales.size());
-    return (av_accum + max_accum * 3) /
-           static_cast<float>(4); // weighted average these
+    return (av_accum + max_accum * 2) /
+           static_cast<float>(3); // weighted average these
 }
 
 [[nodiscard]] static cv::Mat denoise_and_sharpen(const cv::Mat& edges) {
@@ -176,7 +150,7 @@ int main(int argc, char* argv[]) {
 
     cv::Mat edges_nms;
     p_dollar->edgesNms(edges, orientation_map, edges_nms,
-                       /* r=2 by default */ 5, 0, 1, true);
+                       /* r=2 by default */ 5, /*s=0 by default*/ 17, 1, true);
 
     vcl_cout << "edges_amplified >= 0.8:  "
              << cv::countNonZero(edges_nms >= 0.8F) << '\n';
@@ -218,9 +192,9 @@ int main(int argc, char* argv[]) {
     dbdet_sel_process sel_pro;
 
     sel_pro.parameters()->set_value("-badap_uncer", false);
-    sel_pro.parameters()->set_value("-gap", 30.0); // default = 3.0
-    // sel_pro.parameters()->set_value("-nrad", 5.0);            // default 2.5
-    sel_pro.parameters()->set_value("-max_size_to_group", 50); // default 7
+    // sel_pro.parameters()->set_value("-gap", 5.0); // default = 3.0
+    //  sel_pro.parameters()->set_value("-nrad", 5.0);            // default 2.5
+    // sel_pro.parameters()->set_value("-max_size_to_group", 10); // default 7
 
     sel_pro.clear_input();
     sel_pro.clear_output();
