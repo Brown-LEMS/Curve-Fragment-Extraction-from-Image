@@ -50,7 +50,7 @@ equal(const double lhs, const double rhs,
 [[nodiscard]] static cv::Mat
 detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
                         const cv::Mat& image_float) {
-    const std::array scales = {.25, .5, 1.0, 2.0, 4.0};
+    const std::array scales = {.33, .5, .66, .75, 1.0, 1.33, 1.5, 2.0, 3.0};
     cv::Mat av_accum = cv::Mat::zeros(image_float.size(), CV_32F);
     cv::Mat max_accum = cv::Mat::zeros(image_float.size(), CV_32F);
     for (double s : scales) {
@@ -68,23 +68,9 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
         av_accum += e_resized; // sum across scales, averaged below
     }
     av_accum /= static_cast<float>(scales.size());
-    return (av_accum + max_accum * 2) /
-           static_cast<float>(3); // weighted average these
-}
-
-[[nodiscard]] static cv::Mat denoise_and_sharpen(const cv::Mat& edges) {
-    CV_Assert(edges.type() == CV_32F);
-
-    cv::Mat denoised;
-    cv::medianBlur(edges, denoised, 3);
-
-    cv::Mat blurred;
-    cv::GaussianBlur(denoised, blurred, cv::Size(0, 0), 1.0);
-    cv::Mat sharpened = denoised + 1.0F * (denoised - blurred);
-    cv::threshold(sharpened, sharpened, 0.0, 0.0,
-                  cv::THRESH_TOZERO); // clip negative overshoot
-
-    return sharpened;
+    // boost average since that's most likely signal
+    return (9 * av_accum + max_accum) /
+           static_cast<float>(5); // weighted average these
 }
 
 int main(int argc, char* argv[]) {
@@ -150,10 +136,7 @@ int main(int argc, char* argv[]) {
 
     cv::Mat edges_nms;
     p_dollar->edgesNms(edges, orientation_map, edges_nms,
-                       /* r=2 by default */ 5, /*s=0 by default*/ 17, 1, true);
-
-    vcl_cout << "edges_amplified >= 0.8:  "
-             << cv::countNonZero(edges_nms >= 0.8F) << '\n';
+                       /* r=2 by default */ 5, /*s=0 by default*/ 20, 1, true);
 
     vcl_cout << "Edge detection done." << '\n';
 

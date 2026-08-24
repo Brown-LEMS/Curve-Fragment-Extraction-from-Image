@@ -32,9 +32,14 @@ create_file_recursive(const std::filesystem::path& file_path) {
     }
 }
 
-/// Wrap an angle into [0, 2*pi), which matches dbdet_angle0To2Pi() convention
-/// used internally by dbdet_edgel's constructor for `tangent`.
-static inline double wrap0to2pi(double a) {
+static inline double wrap_minus_pi_to_pi(double a) {
+    a = std::fmod(a + CV_PI, 2.0 * CV_PI);
+    if (a < 0)
+        a += 2.0 * CV_PI;
+    return a - CV_PI;
+}
+
+static inline double wrap_0_to_2pi(double a) {
     a = std::fmod(a, 2.0 * CV_PI);
     if (a < 0)
         a += 2.0 * CV_PI;
@@ -111,7 +116,7 @@ static inline bool write_edg_v3(const std::string& filename,
                 if (orientation_is_normal)
                     dir += CV_PI / 2.0;
             }
-            dir = wrap0to2pi(dir);
+            dir -= wrap_minus_pi_to_pi(dir);
 
             double px = x;
             double py = y;
