@@ -39,10 +39,12 @@
 #include "core/dbdet_save_cem_process.h"
 #include "core/dbdet_sel_process.h"
 
-[[nodiscard]] static cv::Mat
-detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
-                        const cv::Mat& image_float,
-                        const std::vector<double>& scales = {.5, 1.0, 2.0}) {
+// detects edges on multiple scales taking the max prob for a given point among
+// scales
+[[nodiscard]] static cv::Mat detect_edges_multiscale_max(
+    cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
+    const cv::Mat& image_float,
+    const std::vector<double>& scales = {.25, .75, 1.0, 1.5, 2.0}) {
 
     cv::Mat accum = cv::Mat::zeros(image_float.size(), CV_32F);
 
@@ -62,25 +64,53 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
     }
     return accum;
 }
-[[nodiscard]] cv::Mat smooth_orientation(const cv::Mat& orientation,
-                                         int ksize = 5) {
-    CV_Assert(orientation.type() == CV_32F);
 
-    cv::Mat mag = cv::Mat::ones(orientation.size(), CV_32F);
-    cv::Mat cos_o;
-    cv::Mat sin_o;
-    cv::polarToCart(mag, orientation, cos_o,
-                    sin_o); // vectorized angle->(cos,sin)
+inline bool
+equal(const double lhs, const double rhs,
+      const double epsilon = std::numeric_limits<double>::epsilon()) {
+    return std::abs(lhs - rhs) <=
+           epsilon * std::max(std::abs(lhs), std::abs(rhs));
+}
 
-    cv::GaussianBlur(cos_o, cos_o, cv::Size(ksize, ksize), 0);
-    cv::GaussianBlur(sin_o, sin_o, cv::Size(ksize, ksize), 0);
+// detects edges on multiple scales averaging probs across scales
+[[nodiscard]] static cv::Mat
+detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
+                        const cv::Mat& image_float) {
+    const std::array scales = {.25, .5, .75, 1.0, 1.5, 2.0, 3.0};
+    cv::Mat av_accum = cv::Mat::zeros(image_float.size(), CV_32F);
+    cv::Mat max_accum = cv::Mat::zeros(image_float.size(), CV_32F);
+    for (double s : scales) {
+        cv::Mat scaled;
+        cv::resize(image_float, scaled, cv::Size(), s, s,
+                   s < 1.0 ? cv::INTER_AREA : cv::INTER_LINEAR);
+        cv::Mat e;
+        pDollar->detectEdges(scaled, e);
+        cv::Mat e_resized;
+        cv::resize(e, e_resized, image_float.size(), 0, 0, cv::INTER_LINEAR);
 
-    cv::Mat mag_out;
-    cv::Mat angle_out;
-    cv::cartToPolar(
-        cos_o, sin_o, mag_out,
-        angle_out); // vectorized (cos,sin)->angle, radians in [0, 2pi)
-    return angle_out;
+        cv::max(max_accum, e_resized,
+                max_accum);    // max accum for scales to try to get as
+                               // much signal as possible
+        av_accum += e_resized; // sum across scales, averaged below
+    }
+    av_accum /= static_cast<float>(scales.size());
+    return (av_accum + max_accum * 3) /
+           static_cast<float>(4); // weighted average these
+}
+
+[[nodiscard]] static cv::Mat denoise_and_sharpen(const cv::Mat& edges) {
+    CV_Assert(edges.type() == CV_32F);
+
+    cv::Mat denoised;
+    cv::medianBlur(edges, denoised, 3);
+
+    cv::Mat blurred;
+    cv::GaussianBlur(denoised, blurred, cv::Size(0, 0), 1.0);
+    cv::Mat sharpened = denoised + 1.0F * (denoised - blurred);
+    cv::threshold(sharpened, sharpened, 0.0, 0.0,
+                  cv::THRESH_TOZERO); // clip negative overshoot
+
+    return sharpened;
 }
 
 int main(int argc, char* argv[]) {
@@ -126,9 +156,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // StructuredEdgeDetection expects CV_32FC3 scaled to [0,1] (in-place,
-    // same as OpenCV's own structured_edge_detection sample -- no BGR->RGB
-    // swap here, matching that sample's behavior)
+    // StructuredEdgeDetection expects CV_32FC3 scaled to [0,1]
     image.convertTo(image, CV_32F, 1.0 / 255.0);
 
     cv::Ptr<cv::ximgproc::StructuredEdgeDetection> p_dollar =
@@ -142,21 +170,16 @@ int main(int argc, char* argv[]) {
     cv::Mat edges =
         detect_edges_multiscale(p_dollar, image); // CV_32FC1, values in [0,1]
 
-    // boost faint edges
-    // cv::pow(edges, 0.8, edges);
-
     // computes orientation from edge map
     cv::Mat orientation_map;
     p_dollar->computeOrientation(edges, orientation_map);
-    orientation_map = smooth_orientation(orientation_map);
 
-    // suppress edges -- thin the edge response down to (approximately)
-    // single-pixel-wide ridges before handing it to the linker. Without
-    // this, dbdet_sel_process's curvelet grouping chokes on blobs of
-    // edgels a few pixels wide around every real edge.
     cv::Mat edges_nms;
     p_dollar->edgesNms(edges, orientation_map, edges_nms,
-                       /* 2 might be better here */ 1, 0, 1, true);
+                       /* r=2 by default */ 5, 0, 1, true);
+
+    vcl_cout << "edges_amplified >= 0.8:  "
+             << cv::countNonZero(edges_nms >= 0.8F) << '\n';
 
     vcl_cout << "Edge detection done." << '\n';
 
@@ -169,7 +192,7 @@ int main(int argc, char* argv[]) {
              << cv::countNonZero(edges_nms >= (float)threshold) << '\n';
 
     if (output_edg_file.length()) {
-        dbdet_cv_bridge::write_edg_v3(output_edg_file, edges_nms,
+        dbdet_cv_bridge::write_edg_v3(output_edg_file, edges_nms, edges,
                                       orientation_map, threshold,
                                       /*orientation_is_normal=*/true);
     }
@@ -178,7 +201,8 @@ int main(int argc, char* argv[]) {
     vcl_cout << "************* Build dbdet_edgemap *********" << '\n';
 
     dbdet_edgemap_sptr EM = dbdet_cv_bridge::edgemap_from_opencv(
-        edges_nms, orientation_map, threshold, /*orientation_is_normal=*/true);
+        edges_nms, edges, orientation_map, threshold,
+        /*orientation_is_normal=*/true);
 
     vcl_cout << "N edgels: " << EM->num_edgels() << '\n';
 
@@ -193,20 +217,10 @@ int main(int argc, char* argv[]) {
     vcl_cout << "************ Symbolic Edge Linking     ************" << '\n';
     dbdet_sel_process sel_pro;
 
-    // the edgemap has no real per-edgel uncertainty (edgemap_from_opencv
-    // sets uncertainty=0.0), so force fixed -dx/-dt tolerances instead
-    // of "adaptive" per-edgel uncertainty.
-    //
-    // in practice, tho, changing this doesn't look like it does anything, so
-    // leave this commented out for noe
-    // sel_pro.parameters()->set_value("-badap_uncer", false);
-
-    // loosened for pixel-quantized OpenCV positions + noisier orientation,
-    // vs. defaults tuned for subpixel third-order detector output.
-    sel_pro.parameters()->set_value("-dx", 0.75);  // was 0.4
-    sel_pro.parameters()->set_value("-dt", 25.0);  // was 20.0
-    sel_pro.parameters()->set_value("-nrad", 7.0); // was 3.5
-    sel_pro.parameters()->set_value("-gap", 6.0);  // was 3.0
+    sel_pro.parameters()->set_value("-badap_uncer", false);
+    sel_pro.parameters()->set_value("-gap", 30.0); // default = 3.0
+    // sel_pro.parameters()->set_value("-nrad", 5.0);            // default 2.5
+    sel_pro.parameters()->set_value("-max_size_to_group", 50); // default 7
 
     sel_pro.clear_input();
     sel_pro.clear_output();
