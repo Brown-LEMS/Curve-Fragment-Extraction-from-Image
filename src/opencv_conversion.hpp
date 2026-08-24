@@ -116,7 +116,7 @@ static inline bool write_edg_v3(const std::string& filename,
                 if (orientation_is_normal)
                     dir += CV_PI / 2.0;
             }
-            dir -= wrap_minus_pi_to_pi(dir);
+            dir = wrap_minus_pi_to_pi(dir);
 
             double px = x;
             double py = y;
