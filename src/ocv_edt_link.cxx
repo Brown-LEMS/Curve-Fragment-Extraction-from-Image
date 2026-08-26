@@ -1,4 +1,5 @@
 // \file
+// \author Zach Mahan (zachary_mahan@brown.edu)
 // \brief Edge detection (OpenCV contrib structured edge detector) + symbolic
 //        edge linking (dbdet_sel_process), writing a .cem boundary fragment
 //        map - the OpenCV-native replacement for the old .edg-file-based
@@ -34,6 +35,7 @@
 #include <opencv2/ximgproc/structured_edge_detection.hpp>
 
 #include "opencv_conversion.hpp"
+#include "third_order_subpix_correction.hpp"
 
 #include "core/dbdet_edgemap_storage.h"
 #include "core/dbdet_save_cem_process.h"
@@ -99,6 +101,12 @@ int main(int argc, char* argv[]) {
         threshold = atof(argv[5]);
     }
 
+    // gaussian-derivative scale for the third-order subpixel correction
+    // (matches the MATLAB default in edgesDetect_TO.m)
+    //
+    // not currently exposed on the command line, but could be
+    const double subpix_sigma = 2.0;
+
     // Let time how long this takes
     vul_timer t;
 
@@ -130,36 +138,43 @@ int main(int argc, char* argv[]) {
     cv::Mat edges =
         detect_edges_multiscale(p_dollar, image); // CV_32FC1, values in [0,1]
 
-    // computes orientation from edge map
+    // computes orientation from edge map (edge NORMAL, 0=left, pi/2=up)
     cv::Mat orientation_map;
     p_dollar->computeOrientation(edges, orientation_map);
 
-    cv::Mat edges_nms;
-    p_dollar->edgesNms(edges, orientation_map, edges_nms,
-                       /* r=2 by default */ 5, /*s=0 by default*/ 20, 1, true);
-
     vcl_cout << "Edge detection done." << '\n';
-
-    // diagnostics:
     vcl_cout << "edges > 0:              " << cv::countNonZero(edges > 0.0F)
              << '\n';
-    vcl_cout << "edges_nms > 0:          " << cv::countNonZero(edges_nms > 0.0F)
+
+    //******************** Third-Order Subpixel NMS *************************
+    // Replaces OpenCV's edgesNms(): subpix_TO_correction runs non-max
+    // suppression itself (via NMS_token) directly on the raw multiscale
+    // `edges`/`orientation_map`, then refines each surviving maximum's
+    // position and orientation with a third-order (Gaussian-derivative)
+    // fit. `edginfo` holds the resulting subpixel edgel list:
+    // [x, y, orientation(tangent), confidence].
+    vcl_cout << "************* Third-Order Subpixel Correction *********"
              << '\n';
-    vcl_cout << "edges_nms >= threshold: "
-             << cv::countNonZero(edges_nms >= (float)threshold) << '\n';
+
+    cv::Mat to_edgemap;
+    cv::Mat to_orientation;
+    std::vector<cv::Vec4d> edginfo;
+    subpix_TO_correction(to_edgemap, to_orientation, edges, orientation_map,
+                         threshold, subpix_sigma, &edginfo);
+
+    vcl_cout << "subpixel edgels found: " << edginfo.size() << '\n';
 
     if (output_edg_file.length()) {
-        dbdet_cv_bridge::write_edg_v3(output_edg_file, edges_nms, edges,
-                                      orientation_map, threshold,
-                                      /*orientation_is_normal=*/true);
+        dbdet_cv_bridge::write_edg_v3(output_edg_file, edginfo, edges.cols,
+                                      edges.rows,
+                                      /*orientation_is_normal=*/false);
     }
 
     //******************** Build dbdet_edgemap in memory *******************
     vcl_cout << "************* Build dbdet_edgemap *********" << '\n';
 
     dbdet_edgemap_sptr EM = dbdet_cv_bridge::edgemap_from_opencv(
-        edges_nms, edges, orientation_map, threshold,
-        /*orientation_is_normal=*/true);
+        edginfo, edges.cols, edges.rows, /*orientation_is_normal=*/false);
 
     vcl_cout << "N edgels: " << EM->num_edgels() << '\n';
 
