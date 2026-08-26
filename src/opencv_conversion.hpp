@@ -3,7 +3,9 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <opencv2/core.hpp>
@@ -46,95 +48,34 @@ static inline double wrap_0_to_2pi(double a) {
     return a;
 }
 
-/// helper that fits a parabola through three samples of edges along the local
-/// normal direction, and returns the offset from (x, y) to the true sub-pixel
-/// peak.
+/// a single subpixel edgel token, as produced by
+/// third_order_subpix_correction.hpp's subpix_TO_correction():
+///   [0] = x (subpixel column)
+///   [1] = y (subpixel row)
+///   [2] = orientation, in radians -- this is the edge TANGENT direction,
+///         not the normal (see subpix_TO_correction: "Edge Direction
+///         (tangent to the level set) is orthogonal to the gradient").
+///   [3] = confidence / edge strength (gradient magnitude at the maxima)
+using edg_token = cv::Vec4d;
+
+/// Writes a subpixel edgel list (as produced by subpix_TO_correction) to a
+/// .edg file.
 ///
-/// raw_edges should be the edge map BEFORE edgesNms
-static inline cv::Point2d subpixel_offset(const cv::Mat& raw_edges, int x,
-                                          int y, double normal_dir) {
-    double ndx = std::cos(normal_dir);
-    double ndy = std::sin(normal_dir);
-
-    const auto sample = [&raw_edges, x, y](double ox, double oy) -> double {
-        int sx = cvRound(x + ox);
-        int sy = cvRound(y + oy);
-        if (sx < 0 || sy < 0 || sx >= raw_edges.cols || sy >= raw_edges.rows)
-            return 0.0;
-        return static_cast<double>(raw_edges.at<float>(sy, sx));
-    };
-
-    double fm = sample(-ndx, -ndy);
-    double f0 = sample(0.0, 0.0);
-    double fp = sample(ndx, ndy);
-
-    double denom = fm - (2.0 * f0) + fp;
-    double offset = 0.0;
-    if (std::abs(denom) > 1e-6) {
-        offset = 0.5 * (fm - fp) / denom;
-        offset = std::clamp(offset, -1.0, 1.0); // guard against a bad fit
-    }
-    return {offset * ndx, offset * ndy};
-}
-
-/// Writes edges to a .edg file
-/// edges:       edgemap from OpenCV
-/// orientation: orientation map
-/// threshold:   minimum edge strength to keep a pixel as an
-/// edgel.
-//
-// Returns false if the file couldn't be opened for writing.
+/// edginfo:              subpixel edgel tokens: [x, y, orientation, conf]
+/// width, height:         size of the source edge map (for the file header
+///                        and for clamping the integer pixel bucket)
+/// orientation_is_normal: set true only if `edginfo`'s orientation field is
+///                        the edge NORMAL rather than the tangent -- adds
+///                        +pi/2 before wrapping/storing in that case.
+///                        subpix_TO_correction's output is already the
+///                        tangent, so this should be false when fed from
+///                        there.
+///
+/// Returns false if the file couldn't be opened for writing.
 static inline bool write_edg_v3(const std::string& filename,
-                                const cv::Mat& edges_nms,
-                                const cv::Mat& raw_edges = cv::Mat(),
-                                const cv::Mat& orientation = cv::Mat(),
-                                double threshold = 0.1,
-                                bool orientation_is_normal = true) {
-    CV_Assert(edges_nms.type() == CV_32F);
-    CV_Assert(orientation.empty() || (orientation.type() == CV_32F &&
-                                      orientation.size() == raw_edges.size()));
-
-    struct E {
-        int ix, iy;
-        double x, y, dir, conf;
-    };
-    std::vector<E> pts;
-    pts.reserve(static_cast<size_t>(edges_nms.rows) * edges_nms.cols / 20);
-
-    for (int y = 0; y < edges_nms.rows; ++y) {
-        const auto* erow = edges_nms.ptr<float>(y);
-        const float* orow =
-            orientation.empty() ? nullptr : orientation.ptr<float>(y);
-        for (int x = 0; x < edges_nms.cols; ++x) {
-            float conf = erow[x];
-            if (conf < threshold)
-                continue;
-
-            double dir = 0.0;
-            if (orow != nullptr) {
-                dir = orow[x];
-                if (orientation_is_normal)
-                    dir += CV_PI / 2.0;
-            }
-            dir = wrap_minus_pi_to_pi(dir);
-
-            double px = x;
-            double py = y;
-            if (!raw_edges.empty()) {
-                double normal_dir = dir - CV_PI / 2.0;
-                cv::Point2d off = subpixel_offset(raw_edges, x, y, normal_dir);
-                px += off.x;
-                py += off.y;
-            }
-
-            pts.push_back({.ix = x,
-                           .iy = y,
-                           .x = px,
-                           .y = py,
-                           .dir = dir,
-                           .conf = static_cast<double>(conf)});
-        }
-    }
+                                const std::vector<edg_token>& edginfo,
+                                int width, int height,
+                                bool orientation_is_normal = false) {
     std::ofstream out{create_file_recursive_and_open(filename)};
     if (!out)
         return false;
@@ -143,68 +84,61 @@ static inline bool write_edg_v3(const std::string& filename,
     out << "# Format :  [Pixel_Pos]  Pixel_Dir Pixel_Conf  [Sub_Pixel_Pos] "
            "Sub_Pixel_Dir Sub_Pixel_Conf Sub_Pixel_Conf"
         << "\n\n";
-    out << "WIDTH=" << raw_edges.cols << "\n";
-    out << "HEIGHT=" << raw_edges.rows << "\n";
-    out << "EDGE_COUNT=" << pts.size() << "\n\n\n";
+    out << "WIDTH=" << width << "\n";
+    out << "HEIGHT=" << height << "\n";
+    out << "EDGE_COUNT=" << edginfo.size() << "\n\n\n";
 
     out << std::fixed << std::setprecision(6);
-    for (const auto& e : pts) {
-        out << "[" << e.ix << ", " << e.iy << "]    " << e.dir << " " << e.conf
-            << "  " << "[" << e.x << ", " << e.y << "]  " << e.dir << " "
-            << e.conf << " " << 0.0 << "\n";
+    for (const edg_token& e : edginfo) {
+        const double px = e[0];
+        const double py = e[1];
+        double dir = e[2];
+        if (orientation_is_normal)
+            dir += CV_PI / 2.0;
+        dir = wrap_minus_pi_to_pi(dir);
+        const double conf = e[3];
+
+        const int ix =
+            std::clamp(static_cast<int>(std::lround(px)), 0, width - 1);
+        const int iy =
+            std::clamp(static_cast<int>(std::lround(py)), 0, height - 1);
+
+        out << "[" << ix << ", " << iy << "]    " << dir << " " << conf << "  "
+            << "[" << px << ", " << py << "]  " << dir << " " << conf << " "
+            << 0.0 << "\n";
     }
     return true;
 }
 
-/// build a dbdet_edgemap directly, no file I/O
+/// Builds a dbdet_edgemap directly from a subpixel edgel list, w/o file io
 ///
-/// Same parameters/semantics as write_edg_v3, minus the file. This is the
-/// call you want inline in a pipeline that goes straight from OpenCV
-/// detection into dbdet_sel_process.
+/// Same param/semantics as write_edg_v3, minus the file.
+///
+/// Intended for use inside the main pipeline that goes straight from
+/// subpix_TO_correction's edginfo into dbdet_sel_process
 static inline dbdet_edgemap_sptr
-edgemap_from_opencv(const cv::Mat& edges_nms, const cv::Mat& raw_edges,
-                    const cv::Mat& orientation = cv::Mat(),
-                    double threshold = 0.1, bool orientation_is_normal = true) {
-    CV_Assert(edges_nms.type() == CV_32F);
-    CV_Assert(raw_edges.empty() || (raw_edges.type() == CV_32F &&
-                                    raw_edges.size() == edges_nms.size()));
-    CV_Assert(orientation.empty() || (orientation.type() == CV_32F &&
-                                      orientation.size() == edges_nms.size()));
+edgemap_from_opencv(const std::vector<edg_token>& edginfo, int width,
+                    int height, bool orientation_is_normal = false) {
+    dbdet_edgemap_sptr EM = new dbdet_edgemap(width, height);
 
-    dbdet_edgemap_sptr EM = new dbdet_edgemap(edges_nms.cols, edges_nms.rows);
+    for (const edg_token& e : edginfo) {
+        const double px = e[0];
+        const double py = e[1];
+        double dir = e[2];
+        if (orientation_is_normal)
+            dir += CV_PI / 2.0;
+        dir = wrap_minus_pi_to_pi(dir);
+        const double conf = e[3];
 
-    for (int y = 0; y < edges_nms.rows; ++y) {
-        const auto* erow = edges_nms.ptr<float>(y);
-        const float* orow =
-            orientation.empty() ? nullptr : orientation.ptr<float>(y);
-        for (int x = 0; x < edges_nms.cols; ++x) {
-            float conf = erow[x];
-            if (conf < threshold)
-                continue;
+        const int ix =
+            std::clamp(static_cast<int>(std::lround(px)), 0, width - 1);
+        const int iy =
+            std::clamp(static_cast<int>(std::lround(py)), 0, height - 1);
 
-            double dir = 0.0;
-            if (orow != nullptr) {
-                dir = orow[x];
-                if (orientation_is_normal)
-                    dir += CV_PI / 2.0;
-            }
+        auto* edgel = new dbdet_edgel(vgl_point_2d<double>(px, py), // sub-pixel
+                                      dir, conf, 0.0, 0.0);
 
-            double px = x;
-            double py = y;
-            if (!raw_edges.empty()) {
-                // normal = tangent - 90deg; sign doesn't matter, fit is
-                // symmetric
-                double normal_dir = dir - CV_PI / 2.0;
-                cv::Point2d off = subpixel_offset(raw_edges, x, y, normal_dir);
-                px += off.x;
-                py += off.y;
-            }
-
-            auto* e = new dbdet_edgel(vgl_point_2d<double>(px, py), // sub-pixel
-                                      dir, static_cast<double>(conf), 0.0, 0.0);
-
-            EM->insert(e, x, y); // grid bucket stays at the integer pixel
-        }
+        EM->insert(edgel, ix, iy); // grid bucket stays at the integer pixel
     }
     return EM;
 }
