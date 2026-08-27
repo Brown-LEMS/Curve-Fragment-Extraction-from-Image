@@ -72,7 +72,7 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
     av_accum /= static_cast<float>(scales.size());
     // boost average since that's most likely signal
     return (9 * av_accum + max_accum) /
-           static_cast<float>(5); // weighted average these
+           static_cast<float>(8); // weighted average these
 }
 
 int main(int argc, char* argv[]) {
