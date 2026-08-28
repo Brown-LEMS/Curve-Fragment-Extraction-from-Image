@@ -52,9 +52,7 @@ static inline double wrap_0_to_2pi(double a) {
 /// third_order_subpix_correction.hpp's subpix_TO_correction():
 ///   [0] = x (subpixel column)
 ///   [1] = y (subpixel row)
-///   [2] = orientation, in radians -- this is the edge TANGENT direction,
-///         not the normal (see subpix_TO_correction: "Edge Direction
-///         (tangent to the level set) is orthogonal to the gradient").
+///   [2] = orientation in radians (tangent)
 ///   [3] = confidence / edge strength (gradient magnitude at the maxima)
 using edg_token = cv::Vec4d;
 
@@ -65,11 +63,7 @@ using edg_token = cv::Vec4d;
 /// width, height:         size of the source edge map (for the file header
 ///                        and for clamping the integer pixel bucket)
 /// orientation_is_normal: set true only if `edginfo`'s orientation field is
-///                        the edge NORMAL rather than the tangent -- adds
-///                        +pi/2 before wrapping/storing in that case.
-///                        subpix_TO_correction's output is already the
-///                        tangent, so this should be false when fed from
-///                        there.
+///                        the edge is normal
 ///
 /// Returns false if the file couldn't be opened for writing.
 static inline bool write_edg_v3(const std::string& filename,

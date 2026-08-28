@@ -7,23 +7,6 @@
 ///                              Gx_2d_op.m, Gy_2d_op.m, Gxx_2d_op.m,
 ///                              Gxy_2d_op.m, Gyy_2d_op.m)
 ///
-/// Remaining implementation notes:
-///
-///   1) Only the n == 0 (no super-sampling) branch of resampled_filter_2d is
-///      implemented
-///
-///   2) imfilter(sig, h, 'conv', 'circular') is TRUE convolution (kernel
-///      rotated 180 degrees) with wrap-around border handling. OpenCV's
-///      cv::filter2D performs correlation, so the kernel is flipped with
-///      cv::flip(..., -1) before calling filter2D with cv::BORDER_WRAP
-///
-///   3) MATLAB's interp2(..., 'cubic') is replaced with a standard 4x4
-///      cubic-convolution sampler (Keys, a = -0.5), which is what MATLAB's
-///      'cubic' method for interp2 implements. Border samples are clamped
-///      to the image edge (MATLAB would return NaN outside the sampled
-///      grid; edgels found by NMS_token are always `margin` pixels from the
-///      border so this should not matter in practice, but the clamp is a
-///      safety net).
 
 #include <opencv2/opencv.hpp>
 
@@ -195,21 +178,20 @@ static inline double bicubic_sample(const cv::Mat& img, double x, double y) {
     return result;
 }
 
-/// NMS_token: non-maximal suppression with subpixel (parabolic) fit.
-///
-///   Gx, Gy - direction field used to decide which of the 8 "faces" to
-///            interpolate along (dirx = cos(theta), diry = sin(theta) at
-///            the call site, NOT necessarily the gradient magnitude).
-///   G      - the surface being suppressed (edge magnitude).
-///   mask   - nonzero where a pixel is even eligible to be tested (G>thresh).
-///   margin - border pixels to skip.
-///
 struct EdgelToken {
     double x, y;           // subpixel location
     double dir_x, dir_y;   // edgel orientation (tangent) vector
     double grad_x, grad_y; // gradient vector at the maxima
 };
 
+/// NMS_token: non-maximal suppression with subpixel (parabolic) fit.
+///
+///   Gx, Gy - direction field used to decide which of the 8 "faces" to
+///            interpolate along (dirx = cos(theta), diry = sin(theta) at
+///            the call site)
+///   G      - the surface being suppressed (edge magnitude)
+///   mask   - nonzero where a pixel is even eligible to be tested (G>thresh)
+///   margin - border pixels to skip
 static inline void NMS_token(const cv::Mat& Gx, const cv::Mat& Gy,
                              const cv::Mat& G, const cv::Mat& mask, int margin,
                              std::vector<EdgelToken>& tokens) {
