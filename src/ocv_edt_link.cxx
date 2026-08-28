@@ -52,9 +52,15 @@ equal(const double lhs, const double rhs,
 [[nodiscard]] static cv::Mat
 detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
                         const cv::Mat& image_float) {
-    const std::array scales = {.33, .5, .66, .75, 1.0, 1.33, 1.5, 2.0, 3.0};
+    // using more scales can lead to better sensitivity:
+    // const std::array scales = {.33, .5, .66, .75, 1.0, 1.33, 1.5, 2.0, 3.0};
+
+    // the original Piotr Dollar implementation uses just these three scales:
+    const std::array scales = {.5, 1.0, 2.0};
+
     cv::Mat av_accum = cv::Mat::zeros(image_float.size(), CV_32F);
     cv::Mat max_accum = cv::Mat::zeros(image_float.size(), CV_32F);
+
     for (double s : scales) {
         cv::Mat scaled;
         cv::resize(image_float, scaled, cv::Size(), s, s,
@@ -69,7 +75,9 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
                                // much signal as possible
         av_accum += e_resized; // sum across scales, averaged below
     }
+
     av_accum /= static_cast<float>(scales.size());
+
     // boost average since that's most likely signal
     return (9 * av_accum + max_accum) /
            static_cast<float>(8); // weighted average these
