@@ -37,6 +37,7 @@
 #include <vil/vil_convert.h>
 #include "dbdet_yuliang_features.h"
 #include "dbdet_graphical_model_contour_merge.h"
+#include "dbdet_rgb_image_util.h"
 
 
 //: Constructor
@@ -44,7 +45,7 @@ dbdet_graphical_model_contour_merge_process::dbdet_graphical_model_contour_merge
 {
 
   vcl_string root = dbtest_root_dir();
-  vcl_string base_path = root + "/core/test_data";
+  vcl_string base_path = root + "/src/core/test_data";
 
 
   fb = new dbdet_filter_bank(base_path);
@@ -171,7 +172,12 @@ dbdet_graphical_model_contour_merge_process::execute()
   vidpro1_image_storage_sptr frame_image;
   frame_image.vertical_cast(input_data_[0][0]);
   vil_image_resource_sptr image_sptr = frame_image->get_image();
-  vil_image_view<vil_rgb<vxl_byte> > image_view = image_sptr->get_view(0, image_sptr->ni(), 0, image_sptr->nj() );
+  vil_image_view<vil_rgb<vxl_byte> > image_view;
+  if (!dbdet_get_rgb_view(image_sptr, image_view)) {
+    vcl_cerr << "In dbdet_graphical_model_contour_merge_process::execute() - "
+             << "could not convert input image to RGB\n";
+    return false;
+  }
 
   dbdet_sel_storage_sptr input_sel;
   input_sel.vertical_cast(input_data_[0][2]);
