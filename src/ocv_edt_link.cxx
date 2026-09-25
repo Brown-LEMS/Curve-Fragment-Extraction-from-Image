@@ -97,8 +97,14 @@ int main(int argc, char* argv[]) {
     const std::string model_path = argv[2];
     const std::string output_cem_file = argv[3];
     std::string output_edg_file{};
-    if (argc > 4 && std::string(argv[4]).ends_with(".edg")) {
-        output_edg_file = argv[4];
+    if (argc > 4) {
+        const std::string arg4(argv[4]);
+        const std::string edg_suffix = ".edg";
+        if (arg4.size() >= edg_suffix.size() &&
+            arg4.compare(arg4.size() - edg_suffix.size(), edg_suffix.size(),
+                         edg_suffix) == 0) {
+            output_edg_file = arg4;
+        }
     }
 
     double threshold = 0.1;

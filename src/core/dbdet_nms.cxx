@@ -14,6 +14,15 @@
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
 
+namespace {
+// Lifetime for default-ctor const-ref members (must not be temporaries).
+const vil_image_view<double>& dbdet_nms_empty_view()
+{
+  static const vil_image_view<double> empty(0, 0, 1);
+  return empty;
+}
+} // namespace
+
 //---------------------------------------------------------------
 // Constructors
 //----------------------------------------------------------------
@@ -22,9 +31,9 @@
 dbdet_nms::dbdet_nms()
     : thresh_(0.0), parabola_fit_type_(dbdet_nms_params::PFIT_3_POINTS),
       margin_(1), rel_thresh_(2.5), use_adaptive_thresh_(true),
-      dir_x_(*std::make_shared<vil_image_view<double>>(0, 0, 1)),
-      dir_y_(*std::make_shared<vil_image_view<double>>(0, 0, 1)),
-      grad_mag_(*std::make_shared<vil_image_view<double>>(0, 0, 1)),
+      dir_x_(dbdet_nms_empty_view()),
+      dir_y_(dbdet_nms_empty_view()),
+      grad_mag_(dbdet_nms_empty_view()),
       x_(0, 0, 0.0), y_(0, 0, 0.0), dir_(0, 0, 0.0), mag_(0, 0, 0.0),
       deriv_(0, 0, 0.0) {}
 

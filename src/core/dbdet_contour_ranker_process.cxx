@@ -37,6 +37,7 @@
 #include <vil/vil_convert.h>
 #include "dbdet_yuliang_features.h"
 #include "dbdet_curve_fragment_ranker.h"
+#include "dbdet_rgb_image_util.h"
 #include <vcl_algorithm.h>
 
 bool my_comp(const vcl_pair<double, unsigned> & a, const vcl_pair<double, unsigned> & b)
@@ -158,7 +159,12 @@ dbdet_contour_ranker_process::execute()
   vidpro1_image_storage_sptr frame_image;
   frame_image.vertical_cast(input_data_[0][0]);
   vil_image_resource_sptr image_sptr = frame_image->get_image();
-  vil_image_view<vil_rgb<vxl_byte> > image_view = image_sptr->get_view(0, image_sptr->ni(), 0, image_sptr->nj() );
+  vil_image_view<vil_rgb<vxl_byte> > image_view;
+  if (!dbdet_get_rgb_view(image_sptr, image_view)) {
+    vcl_cerr << "In dbdet_contour_ranker_process::execute() - "
+             << "could not convert input image to RGB\n";
+    return false;
+  }
 
   dbdet_sel_storage_sptr input_sel;
   input_sel.vertical_cast(input_data_[0][2]);
