@@ -36,6 +36,7 @@
 
 #include "opencv_conversion.hpp"
 #include "third_order_subpix_correction.hpp"
+#include "core/cf_params.h"
 
 #include "core/dbdet_edgemap_storage.h"
 #include "core/dbdet_save_cem_process.h"
@@ -55,13 +56,12 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
     // using more scales can lead to better sensitivity:
     // const std::array scales = {.33, .5, .66, .75, 1.0, 1.33, 1.5, 2.0, 3.0};
 
-    // the original Piotr Dollar implementation uses just these three scales:
-    const std::array scales = {.5, 1.0, 2.0};
-
+    // Scales live in core/cf_params.h (ocv_scales).
     cv::Mat av_accum = cv::Mat::zeros(image_float.size(), CV_32F);
     cv::Mat max_accum = cv::Mat::zeros(image_float.size(), CV_32F);
 
-    for (double s : scales) {
+    for (int si = 0; si < cf_params::ocv_num_scales; ++si) {
+        const double s = cf_params::ocv_scales[si];
         cv::Mat scaled;
         cv::resize(image_float, scaled, cv::Size(), s, s,
                    s < 1.0 ? cv::INTER_AREA : cv::INTER_LINEAR);
@@ -76,11 +76,12 @@ detect_edges_multiscale(cv::Ptr<cv::ximgproc::StructuredEdgeDetection>& pDollar,
         av_accum += e_resized; // sum across scales, averaged below
     }
 
-    av_accum /= static_cast<float>(scales.size());
+    av_accum /= static_cast<float>(cf_params::ocv_num_scales);
 
     // boost average since that's most likely signal
-    return (9 * av_accum + max_accum) /
-           static_cast<float>(8); // weighted average these
+    return (static_cast<float>(cf_params::ocv_scale_avg_weight) * av_accum +
+            static_cast<float>(cf_params::ocv_scale_max_weight) * max_accum) /
+           static_cast<float>(cf_params::ocv_scale_blend_norm);
 }
 
 int main(int argc, char* argv[]) {
@@ -107,7 +108,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    double threshold = 0.1;
+    double threshold = cf_params::ocv_edge_threshold;
 
     if (output_edg_file.empty() && argc == 5) {
         threshold = atof(argv[4]);
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
     // (matches the MATLAB default in edgesDetect_TO.m)
     //
     // not currently exposed on the command line, but could be
-    const double subpix_sigma = 2.0;
+    const double subpix_sigma = cf_params::ocv_subpix_sigma;
 
     // Let time how long this takes
     vul_timer t;
@@ -203,7 +204,7 @@ int main(int argc, char* argv[]) {
     vcl_cout << "************ Symbolic Edge Linking     ************" << '\n';
     dbdet_sel_process sel_pro;
 
-    sel_pro.parameters()->set_value("-badap_uncer", false);
+    sel_pro.parameters()->set_value("-badap_uncer", cf_params::ocv_sel_badap_uncer);
     // sel_pro.parameters()->set_value("-gap", 5.0); // default = 3.0
     //  sel_pro.parameters()->set_value("-nrad", 5.0);            // default 2.5
     // sel_pro.parameters()->set_value("-max_size_to_group", 10); // default 7

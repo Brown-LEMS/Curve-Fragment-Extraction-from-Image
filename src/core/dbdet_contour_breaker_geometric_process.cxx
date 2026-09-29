@@ -4,6 +4,7 @@
 // \file
 
 #include "dbdet_contour_breaker_geometric_process.h"
+#include "cf_params.h"
 
 
 #include "vidpro1_image_storage.h"
@@ -42,12 +43,12 @@
 //: Constructor
 dbdet_contour_breaker_geometric_process::dbdet_contour_breaker_geometric_process()
 {
-  if( !parameters()->add( "fmean[0]"   , "-fmean_0" , 0.0000000e+00) ||
-      !parameters()->add( "fmean[1]"   , "-fmean_1" , 7.6632618e-01) ||
-      !parameters()->add( "fstd[0]"   , "-fstd_0" , 1.0000000e+00) ||
-      !parameters()->add( "fstd[1]"   , "-fstd_1" , 3.4109466e-01) ||
-      !parameters()->add( "beta[0]"   , "-beta_0" , -1.7658682e-01) ||
-      !parameters()->add( "beta[1]"   , "-beta_1" , 1.0618483e+00)
+  if( !parameters()->add( "fmean[0]"   , "-fmean_0" , cf_params::break_fmean[0]) ||
+      !parameters()->add( "fmean[1]"   , "-fmean_1" , cf_params::break_fmean[1]) ||
+      !parameters()->add( "fstd[0]"   , "-fstd_0" , cf_params::break_fstd[0]) ||
+      !parameters()->add( "fstd[1]"   , "-fstd_1" , cf_params::break_fstd[1]) ||
+      !parameters()->add( "beta[0]"   , "-beta_0" , cf_params::break_beta[0]) ||
+      !parameters()->add( "beta[1]"   , "-beta_1" , cf_params::break_beta[1])
     )
   {
     vcl_cerr << "ERROR: Adding parameters in " __FILE__ << vcl_endl;

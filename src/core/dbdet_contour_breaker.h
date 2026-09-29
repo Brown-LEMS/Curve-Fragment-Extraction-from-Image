@@ -8,6 +8,7 @@
 #include <vnl/vnl_vector_fixed.h>
 #include <vil/vil_image_view.h>
 #include "dbdet_yuliang_features.h"
+#include "cf_params.h"
 
 class dbdet_contour_breaker {
 
@@ -65,7 +66,7 @@ private:
   vbl_array_2d<int> ref_end_pts;
   double nbr_num_edges;
   double diag_ratio;
-  static unsigned const max_it = 2;
+  static unsigned const max_it = cf_params::break_max_iterations;
 };
 #endif //dbdet_contour_breaker_h
 

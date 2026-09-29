@@ -63,6 +63,7 @@ set( core_sources
 
 
   # dbdet codes from lemsvxl
+  cf_params.h
   dbgl_diffgeom.h				dbgl_diffgeom.cxx
   dbtest_root_dir.h			dbtest_root_dir.cxx
   dbdet_appearance.h

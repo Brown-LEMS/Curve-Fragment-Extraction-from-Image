@@ -26,12 +26,12 @@ for i = 1:con_cnt
     end
 
     if (rand==1)
-        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color',colourmp(i,:), 'LineWidth', 3);
+        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color',colourmp(i,:), 'LineWidth', 2);
     else
-        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color', col, 'LineWidth', 3);
+        line(contours{i}(:,1)+1, contours{i}(:,2)+1,'color', col, 'LineWidth', 2);
 
     end
     
-    plot(contours{i}(1,1)+1, contours{i}(1,2)+1, 'y.', 'MarkerSize', 4);
-    plot(contours{i}(end,1)+1, contours{i}(end,2)+1, 'y.', 'MarkerSize', 4);
+    % plot(contours{i}(1,1)+1, contours{i}(1,2)+1, 'y.', 'MarkerSize', 3);
+    % plot(contours{i}(end,1)+1, contours{i}(end,2)+1, 'y.', 'MarkerSize', 3);
 end

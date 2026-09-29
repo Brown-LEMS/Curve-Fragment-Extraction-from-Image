@@ -4,6 +4,7 @@
 // \file
 
 #include "dbdet_contour_ranker_process.h"
+#include "cf_params.h"
 
 
 #include "vidpro1_image_storage.h"
@@ -48,36 +49,36 @@ bool my_comp(const vcl_pair<double, unsigned> & a, const vcl_pair<double, unsign
 //: Constructor
 dbdet_contour_ranker_process::dbdet_contour_ranker_process()
 {
-  if( !parameters()->add( "Best #n contours(0=all)"   , "-nfrags" , 0) ||
-      !parameters()->add( "Threshold"   , "-thresh" , 0.0) ||
-      !parameters()->add( "Minimum contour length(edgels)"   , "-minlen" , 0) ||
-      !parameters()->add( "fmean[0]"   , "-fmean_0" , 0.0000000e+00) ||
-      !parameters()->add( "fmean[1]"   , "-fmean_1" , 1.2100564e-01) ||
-      !parameters()->add( "fmean[2]"   , "-fmean_2" , 1.1583408e-01) ||
-      !parameters()->add( "fmean[3]"   , "-fmean_3" , 8.5717724e-02) ||
-      !parameters()->add( "fmean[4]"   , "-fmean_4" , 1.5083448e-01) ||
-      !parameters()->add( "fmean[5]"   , "-fmean_5" , 1.1946507e-01) ||
-      !parameters()->add( "fmean[6]"   , "-fmean_6" , 2.2051502e+00) ||
-      !parameters()->add( "fmean[7]"   , "-fmean_7" , 7.6632618e-01) ||
-      !parameters()->add( "fmean[8]"   , "-fmean_8" , 9.1834344e-01) ||
-      !parameters()->add( "fstd[0]"   , "-fstd_0" , 1.0000000e+00) ||
-      !parameters()->add( "fstd[1]"   , "-fstd_1" , 1.1751265e-01) ||
-      !parameters()->add( "fstd[2]"   , "-fstd_2" , 1.0735821e-01) ||
-      !parameters()->add( "fstd[3]"   , "-fstd_3" , 1.3995593e-01) ||
-      !parameters()->add( "fstd[4]"   , "-fstd_4" , 1.4768553e-01) ||
-      !parameters()->add( "fstd[5]"   , "-fstd_5" , 1.0967336e-01) ||
-      !parameters()->add( "fstd[6]"   , "-fstd_6" , 1.6652428e+00) ||
-      !parameters()->add( "fstd[7]"   , "-fstd_7" , 3.4109466e-01) ||
-      !parameters()->add( "fstd[8]"   , "-fstd_8" , 4.1954811e-01) ||
-      !parameters()->add( "beta[0]"   , "-beta_0" , -1.7658682e-01) ||
-      !parameters()->add( "beta[1]"   , "-beta_1" , -2.4023619e-01) ||
-      !parameters()->add( "beta[2]"   , "-beta_2" , -2.8814772e-01) ||
-      !parameters()->add( "beta[3]"   , "-beta_3" , -2.8576244e-01) ||
-      !parameters()->add( "beta[4]"   , "-beta_4" , 4.9989011e-02) ||
-      !parameters()->add( "beta[5]"   , "-beta_5" , -1.5149038e-01) ||
-      !parameters()->add( "beta[6]"   , "-beta_6" , -4.1761749e-01) ||
-      !parameters()->add( "beta[7]"   , "-beta_7" , 9.2396348e-01) ||
-      !parameters()->add( "beta[8]"   , "-beta_8" , 1.5311652e-02)
+  if( !parameters()->add( "Best #n contours(0=all)"   , "-nfrags" , cf_params::rank_nfrags) ||
+      !parameters()->add( "Threshold"   , "-thresh" , cf_params::rank_thresh) ||
+      !parameters()->add( "Minimum contour length(edgels)"   , "-minlen" , cf_params::rank_minlen) ||
+      !parameters()->add( "fmean[0]"   , "-fmean_0" , cf_params::rank_fmean[0]) ||
+      !parameters()->add( "fmean[1]"   , "-fmean_1" , cf_params::rank_fmean[1]) ||
+      !parameters()->add( "fmean[2]"   , "-fmean_2" , cf_params::rank_fmean[2]) ||
+      !parameters()->add( "fmean[3]"   , "-fmean_3" , cf_params::rank_fmean[3]) ||
+      !parameters()->add( "fmean[4]"   , "-fmean_4" , cf_params::rank_fmean[4]) ||
+      !parameters()->add( "fmean[5]"   , "-fmean_5" , cf_params::rank_fmean[5]) ||
+      !parameters()->add( "fmean[6]"   , "-fmean_6" , cf_params::rank_fmean[6]) ||
+      !parameters()->add( "fmean[7]"   , "-fmean_7" , cf_params::rank_fmean[7]) ||
+      !parameters()->add( "fmean[8]"   , "-fmean_8" , cf_params::rank_fmean[8]) ||
+      !parameters()->add( "fstd[0]"   , "-fstd_0" , cf_params::rank_fstd[0]) ||
+      !parameters()->add( "fstd[1]"   , "-fstd_1" , cf_params::rank_fstd[1]) ||
+      !parameters()->add( "fstd[2]"   , "-fstd_2" , cf_params::rank_fstd[2]) ||
+      !parameters()->add( "fstd[3]"   , "-fstd_3" , cf_params::rank_fstd[3]) ||
+      !parameters()->add( "fstd[4]"   , "-fstd_4" , cf_params::rank_fstd[4]) ||
+      !parameters()->add( "fstd[5]"   , "-fstd_5" , cf_params::rank_fstd[5]) ||
+      !parameters()->add( "fstd[6]"   , "-fstd_6" , cf_params::rank_fstd[6]) ||
+      !parameters()->add( "fstd[7]"   , "-fstd_7" , cf_params::rank_fstd[7]) ||
+      !parameters()->add( "fstd[8]"   , "-fstd_8" , cf_params::rank_fstd[8]) ||
+      !parameters()->add( "beta[0]"   , "-beta_0" , cf_params::rank_beta[0]) ||
+      !parameters()->add( "beta[1]"   , "-beta_1" , cf_params::rank_beta[1]) ||
+      !parameters()->add( "beta[2]"   , "-beta_2" , cf_params::rank_beta[2]) ||
+      !parameters()->add( "beta[3]"   , "-beta_3" , cf_params::rank_beta[3]) ||
+      !parameters()->add( "beta[4]"   , "-beta_4" , cf_params::rank_beta[4]) ||
+      !parameters()->add( "beta[5]"   , "-beta_5" , cf_params::rank_beta[5]) ||
+      !parameters()->add( "beta[6]"   , "-beta_6" , cf_params::rank_beta[6]) ||
+      !parameters()->add( "beta[7]"   , "-beta_7" , cf_params::rank_beta[7]) ||
+      !parameters()->add( "beta[8]"   , "-beta_8" , cf_params::rank_beta[8])
     )
   {
     vcl_cerr << "ERROR: Adding parameters in " __FILE__ << vcl_endl;

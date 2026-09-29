@@ -8,6 +8,7 @@
 #include "dbdet_edgel.h"
 #include "dbdet_edgemap.h"
 #include "dbdet_yuliang_features.h"
+#include "cf_params.h"
 
 
 // This is dbdet_curve_fragment_cues.h
@@ -110,8 +111,8 @@ private:
   //vxl_uint_32 visited_id_;
   vbl_array_2d<bool> mask;
   const dbdet_edgemap &em_;
-  static unsigned const local_dist_ = 2; // distance used for local sampling
-  static unsigned const nbr_width_ = 3;  // distance used for lateral edge sparsity
+  static unsigned const local_dist_ = cf_params::cue_local_dist;
+  static unsigned const nbr_width_ = cf_params::cue_nbr_width;
   static constexpr double epsilon = 1e-10;
 };
 

@@ -16,7 +16,7 @@ dbdet_contour_breaker_geom(
       dbdet_curve_fragment_graph & newCFG
       )
 {
-  int const ref_tabel_nbr_range = 2;
+  int const ref_tabel_nbr_range = cf_params::break_ref_table_nbr_range;
   unsigned const not_assigned = -1;
 
   deep_copy_cfg(CFG, newCFG);
@@ -397,8 +397,8 @@ compute_merge_probability_semantic(
       vcl_vector<double> & prob
       )
 {
-  unsigned const local_dist = 1;
-  unsigned const nbr_width = 3;
+  unsigned const local_dist = cf_params::break_local_dist;
+  unsigned const nbr_width = cf_params::break_nbr_width;
   
   unsigned npts =  chain.edgels.size();
 
