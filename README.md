@@ -27,15 +27,16 @@ This enables continual compilation by ignoring any past errors arising from the 
 ## Dependency: OpenCV4 / OpenCV4 Contribution
 1. Install or build [OpenCV4](https://github.com/opencv/opencv) with [OpenCV4 Contribution](https://github.com/opencv/opencv_contrib) (build directions are in the latter)
     - Before building, make sure (using a package manager or some other method) that `libgtk2.0-dev` is installed on Debian/Ubuntu or `gtk2-devel` on Fedora. `pkg-config` must also be installed.
-3. Download the Structured Forest Edge model from [here](https://github.com/opencv/opencv_extra/blob/master/testdata/cv/ximgproc/model.yml.gz)
+2. Download the Structured Forest Edge model from [here](https://github.com/opencv/opencv_extra/blob/master/testdata/cv/ximgproc/model.yml.gz)
 
 ## How to Use the Code
 ### Build and Compile
+The code is compatible with both C++17 and C++20.
 ```bash
 $ cmake -S . -B build -DVXL_DIR=/path/to/vxl/build -DCMAKE_PREFIX_PATH=/path/to/opencv/build
 $ cmake --build build -j{nproc}
 ```
-Type in the path of `VXL_DIR` as the path of the VXL build folder you have made in the VXL build step. Also type in the path of your OpenCV build directory for the `CMAKE_PREFIX_PATH` flag. Once the compilation is done, you will see three executables generated under `build`: `MSEL_edges2CFs`, `MSEL_img2CFs`, and `dborl_compute_curve_frags`.
+Type in the path of `VXL_DIR` as the path of the VXL build folder you have made in the VXL build step. Also type in the path of your OpenCV build directory for the `CMAKE_PREFIX_PATH` flag. Once the compilation is done, you will see three executables generated under `build/src/`: `MSEL_edges2CFs`, `MSEL_img2CFs`, and `dborl_compute_curve_frags`.
 
 ### Usage
 The three executables differ in the inputs and the process but they share the same library and symbolic edge linking (SEL). The output `XX.cem` file records all returned contours represented as a seuqence of ordered edges. Although the file extension is `.cem`, it can however be treated as a regular `.txt` file.
@@ -46,7 +47,7 @@ The three executables differ in the inputs and the process but they share the sa
 | `MSEL_edges2CFs` | RGB image + edge file (`.edg`) | Load edge map from file -> SEL -> Geometric Contour Break -> Graphical-Model Merge -> Contour Ranker -> Save CEM |
 | `dborl_compute_curve_frags` | edge file (`.edg`) | Load edge map from file -> SEL -> Save CEM (No curve break / merge / rank) |
 
-**Command-line quick reference** (from `build/`) you can use the examples under `example_data/`:
+**Command-line quick reference** (from `build/src/`) you can use the examples under `example_data/`:
 - **`MSEL_img2CFs`**: `<image-name>.png <cem-name>.cem <nContours> <e_sigma> <e_thresh>`
   - `nContours`: number of returned contours after ranking. Set 0 if opting for returning all ranked contours.
   - `e_sigma`: Sigma parameter for the third-order edge detection.
@@ -54,7 +55,7 @@ The three executables differ in the inputs and the process but they share the sa
 
 	Example:
 	```bash
-	$ ./build/MSEL_img2CFs example_data/cabinet.png example_data/cabinet.cem 200 1 1
+	$ ./build/src/MSEL_img2CFs example_data/cabinet.png example_data/cabinet.cem 200 1 1
 	```
 
 - **`MSEL_edges2CFs`**: `<image-name>.png <edge-name>.edg <cem-name>.cem <nContours>`
@@ -62,7 +63,7 @@ The three executables differ in the inputs and the process but they share the sa
 
 	Example:
 	```bash
-	$ ./build/MSEL_edges2CFs example_data/cabinet.png example_data/cabinet.edg example_data/cabinet.cem 200
+	$ ./build/src/MSEL_edges2CFs example_data/cabinet.png example_data/cabinet.edg example_data/cabinet.cem 200
 	```
 
 - **`dborl_compute_curve_frags`**: `<edge-name>.edg <output-cem-name>.cem`

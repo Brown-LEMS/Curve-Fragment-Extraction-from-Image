@@ -4,10 +4,6 @@
 #MESSAGE("VXL_GEL_INCLUDE_DIR is ${VXL_GEL_INCLUDE_DIR}")
 #MESSAGE("VXL_MUL_INCLUDE_DIR is ${VXL_MUL_INCLUDE_DIR}")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
 configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/dbtest_where_root_dir.h.in
         ${CMAKE_CURRENT_BINARY_DIR}/dbtest_where_root_dir.h ESCAPE_QUOTES
@@ -67,6 +63,7 @@ set( core_sources
 
 
   # dbdet codes from lemsvxl
+  cf_params.h
   dbgl_diffgeom.h				dbgl_diffgeom.cxx
   dbtest_root_dir.h			dbtest_root_dir.cxx
   dbdet_appearance.h

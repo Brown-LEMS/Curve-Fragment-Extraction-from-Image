@@ -4,6 +4,7 @@
 // \file
 
 #include "dbdet_contour_breaker_geometric_process.h"
+#include "cf_params.h"
 
 
 #include "vidpro1_image_storage.h"
@@ -37,16 +38,17 @@
 #include <vil/vil_convert.h>
 #include "dbdet_yuliang_features.h"
 #include "dbdet_contour_breaker.h"
+#include "dbdet_rgb_image_util.h"
 
 //: Constructor
 dbdet_contour_breaker_geometric_process::dbdet_contour_breaker_geometric_process()
 {
-  if( !parameters()->add( "fmean[0]"   , "-fmean_0" , 0.0000000e+00) ||
-      !parameters()->add( "fmean[1]"   , "-fmean_1" , 7.6632618e-01) ||
-      !parameters()->add( "fstd[0]"   , "-fstd_0" , 1.0000000e+00) ||
-      !parameters()->add( "fstd[1]"   , "-fstd_1" , 3.4109466e-01) ||
-      !parameters()->add( "beta[0]"   , "-beta_0" , -1.7658682e-01) ||
-      !parameters()->add( "beta[1]"   , "-beta_1" , 1.0618483e+00)
+  if( !parameters()->add( "fmean[0]"   , "-fmean_0" , cf_params::break_fmean[0]) ||
+      !parameters()->add( "fmean[1]"   , "-fmean_1" , cf_params::break_fmean[1]) ||
+      !parameters()->add( "fstd[0]"   , "-fstd_0" , cf_params::break_fstd[0]) ||
+      !parameters()->add( "fstd[1]"   , "-fstd_1" , cf_params::break_fstd[1]) ||
+      !parameters()->add( "beta[0]"   , "-beta_0" , cf_params::break_beta[0]) ||
+      !parameters()->add( "beta[1]"   , "-beta_1" , cf_params::break_beta[1])
     )
   {
     vcl_cerr << "ERROR: Adding parameters in " __FILE__ << vcl_endl;
@@ -128,7 +130,12 @@ dbdet_contour_breaker_geometric_process::execute()
   vidpro1_image_storage_sptr frame_image;
   frame_image.vertical_cast(input_data_[0][0]);
   vil_image_resource_sptr image_sptr = frame_image->get_image();
-  vil_image_view<vil_rgb<vxl_byte> > image_view = image_sptr->get_view(0, image_sptr->ni(), 0, image_sptr->nj() );
+  vil_image_view<vil_rgb<vxl_byte> > image_view;
+  if (!dbdet_get_rgb_view(image_sptr, image_view)) {
+    vcl_cerr << "In dbdet_contour_breaker_geometric_process::execute() - "
+             << "could not convert input image to RGB\n";
+    return false;
+  }
 
   dbdet_sel_storage_sptr input_sel;
   input_sel.vertical_cast(input_data_[0][2]);
@@ -157,10 +164,17 @@ dbdet_contour_breaker_geometric_process::execute()
   for (unsigned i = 0; i < y_params_1_size; ++i)
     beta_geom[i] /= fstd_geom[i];
 
-  //vcl_vector<vil_image_view<double> > decomposed = fb->decompose(image_view);
-	//vnl_matrix<unsigned> tmap = tex->classify(decomposed);
+  // Geometric breaker does not use textons; keep a valid zero map for the ctor assert.
   vnl_matrix<unsigned> tmap(image_view.ni(), image_view.nj());
-  // perfrom third-order edge detection with these parameters
+  tmap.fill(0);
+  if (EM->ncols() != image_view.ni() || EM->nrows() != image_view.nj()) {
+    vcl_cerr << "In dbdet_contour_breaker_geometric_process::execute() - "
+             << "image and edge map size mismatch: image "
+             << image_view.ni() << "x" << image_view.nj()
+             << " vs edgemap " << EM->ncols() << "x" << EM->nrows()
+             << " (check WIDTH/HEIGHT in the .edg header)\n";
+    return false;
+  }
   dbdet_contour_breaker cb(image_view, *EM, tmap);
 
   

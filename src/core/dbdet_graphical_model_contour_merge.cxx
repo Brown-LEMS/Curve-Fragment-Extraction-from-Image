@@ -1,6 +1,7 @@
 #include <vcl_map.h>
 #include "dbgl_diffgeom.h"
 #include "dbdet_graphical_model_contour_merge.h"
+#include "cf_params.h"
 #include <vcl_algorithm.h>
 
 struct var_node {
@@ -460,7 +461,7 @@ compute_texture_hist(
       y_hist_vector & right
       )
 {
-  unsigned const tex_nbr_dist = 3;
+  unsigned const tex_nbr_dist = cf_params::merge_tex_nbr_dist;
   unsigned npts =  chain.edgels.size();
 
 

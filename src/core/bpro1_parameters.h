@@ -87,12 +87,12 @@ class bpro1_param_type : public bpro1_param
 {
  public:
   // Constructor - with bounds
-  bpro1_param_type<T>(const vcl_string& name, const vcl_string& desc, const T& dflt, const T& min, const T& max)
+  bpro1_param_type(const vcl_string& name, const vcl_string& desc, const T& dflt, const T& min, const T& max)
    : bpro1_param(true, name, desc), value_(dflt), default_(dflt), temp_value_(dflt),
      min_value_(min), max_value_(max) { assert( min_value_ <= value_ && value_ <= max_value_ ); }
 
   // Constructor - without bounds
-  bpro1_param_type<T>(const vcl_string& name, const vcl_string& desc, const T& dflt)
+  bpro1_param_type(const vcl_string& name, const vcl_string& desc, const T& dflt)
    : bpro1_param(false, name, desc), value_(dflt), default_(dflt), temp_value_(dflt),
      min_value_(dflt), max_value_(dflt) {}
 

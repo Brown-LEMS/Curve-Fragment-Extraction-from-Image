@@ -4,6 +4,7 @@
 // \file
 
 #include "dbdet_sel_process.h"
+#include "cf_params.h"
 
 #include "dbdet_edgemap_sptr.h"
 #include "dbdet_edgemap_storage.h"
@@ -68,40 +69,46 @@ dbdet_sel_process::dbdet_sel_process() {
 
     if (
         // grouping parameters
-        !parameters()->add("Radius of Neighborhood", "-nrad", 3.5) ||
+        !parameters()->add("Radius of Neighborhood", "-nrad", cf_params::sel_nrad) ||
         // By Naman Kumar
-        !parameters()->add("Maximum Pixel Distance to complete", "-gap", 3.0) ||
+        !parameters()->add("Maximum Pixel Distance to complete", "-gap",
+                           cf_params::sel_gap) ||
         !parameters()->add("Get Uncertainty from edges", "-badap_uncer",
-                           true) ||
-        !parameters()->add("  - Position uncertainty", "-dx", 0.4) ||
-        !parameters()->add("  - Orientation uncertainty(Deg)", "-dt", 20.0) ||
+                           cf_params::sel_badap_uncer) ||
+        !parameters()->add("  - Position uncertainty", "-dx", cf_params::sel_dx) ||
+        !parameters()->add("  - Orientation uncertainty(Deg)", "-dt",
+                           cf_params::sel_dt_deg) ||
 
         // curve model
         !parameters()->add("Curve Model", "-curve_model", curve_model_choices,
-                           5) ||
+                           cf_params::sel_curve_model) ||
 
         // curve model parameters
-        !parameters()->add("  - Token Length", "-token_len", 1.0) ||
+        !parameters()->add("  - Token Length", "-token_len",
+                           cf_params::sel_token_len) ||
         //! parameters()->add( "  - Maximum Curvature" , "-max_k" , 0.2 ) ||
         //! parameters()->add( "  - Maximum Curvature Derivative" , "-max_gamma"
         //! , 0.05 ) ||
 
         // grouping algorithm
         !parameters()->add("Local Grouping Algorithm", "-grouping_algo",
-                           grouping_algo_choices, 2) ||
+                           grouping_algo_choices, cf_params::sel_grouping_algo) ||
         !parameters()->add("  - Curvelet Type", "-cvlet_type",
-                           curvelet_type_choices, 0) ||
+                           curvelet_type_choices, cf_params::sel_cvlet_type) ||
         !parameters()->add("  - Appearance Usage", "-app_usage",
-                           appearance_usage_choices, 0) ||
-        !parameters()->add("  - App Threshold", "-app_thresh", 0.2) ||
+                           appearance_usage_choices, cf_params::sel_app_usage) ||
+        !parameters()->add("  - App Threshold", "-app_thresh",
+                           cf_params::sel_app_thresh) ||
 
         !parameters()->add("  - Maximum # of edgels to group",
-                           "-max_size_to_group", (unsigned)7) ||
+                           "-max_size_to_group", cf_params::sel_max_size_to_group) ||
 
         !parameters()->add("Form Complete Curvelet Map",
-                           "-bFormCompleteCvletMap", false) ||
+                           "-bFormCompleteCvletMap",
+                           cf_params::sel_form_complete_cvlet_map) ||
 
-        !parameters()->add("Form Link Graph", "-bFormLinkGraph", true) ||
+        !parameters()->add("Form Link Graph", "-bFormLinkGraph",
+                           cf_params::sel_form_link_graph) ||
 
         // link graph formation
         //! parameters()->add( "Use All Curvelets" , "-b_use_all_cvlets", false
@@ -113,21 +120,22 @@ dbdet_sel_process::dbdet_sel_process() {
 
         // link graph --> image contours
         !parameters()->add("Extract Image Contours ", "-linking_algo",
-                           linking_algo_choices, 2) ||
+                           linking_algo_choices, cf_params::sel_linking_algo) ||
 
         // linking parameter for contour extraction from the link graph
         !parameters()->add("  - Number of Linking iterations",
-                           "-num_link_iters", (unsigned)7) ||
+                           "-num_link_iters", cf_params::sel_num_link_iters) ||
 
         // Get Final contours in one step
         !parameters()->add("Proceed with Hypothesis Graph",
-                           "-bGetfinalcontours", true) ||
+                           "-bGetfinalcontours", cf_params::sel_get_final_contours) ||
 
         // merge frag candidates after hypothesis
         //! parameters()->add( "Merge curve fragments candidates",
         //! "-bmergefrags", true )
         //
-        !parameters()->add("Resolving Junctions", "-bDetJct", true)) {
+        !parameters()->add("Resolving Junctions", "-bDetJct",
+                           cf_params::sel_resolve_junctions)) {
         vcl_cerr << "ERROR: Adding parameters in " __FILE__ << vcl_endl;
     }
 }
@@ -343,18 +351,18 @@ bool dbdet_sel_process::execute() {
 bool dbdet_sel_process::finish() { return true; }
 
 void dbdet_sel_process::get_parameters() {
-    // default parameter values
-    token_len = 1.0;
-    max_k = 0.2;
-    max_gamma = 0.05;
-    bCentered_grouping = true;
+    // default parameter values (see src/core/cf_params.h)
+    token_len = cf_params::sel_token_len;
+    max_k = cf_params::sel_max_k;
+    max_gamma = cf_params::sel_max_gamma;
+    bCentered_grouping = cf_params::sel_centered_grouping;
 
-    linkgraph_algo = 0;
-    min_size_to_link = 4;
-    b_use_all_cvlets = false;
+    linkgraph_algo = cf_params::sel_linkgraph_algo;
+    min_size_to_link = cf_params::sel_min_size_to_link;
+    b_use_all_cvlets = cf_params::sel_use_all_cvlets;
     linking_algo = 0;
-    app_usage = 0;
-    app_thresh = 0.2;
+    app_usage = cf_params::sel_app_usage;
+    app_thresh = cf_params::sel_app_thresh;
 
     // grouping parameters
     parameters()->get_value("-nrad", nrad);

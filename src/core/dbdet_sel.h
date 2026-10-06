@@ -29,7 +29,7 @@ class dbdet_sel : public dbdet_sel_base
 public:
 
   //: constructor
-  dbdet_sel<curve_model>(dbdet_edgemap_sptr edgemap, 
+  dbdet_sel(dbdet_edgemap_sptr edgemap, 
                          dbdet_curvelet_map& cvlet_map, 
                          dbdet_edgel_link_graph& edge_link_graph, 
                          dbdet_curve_fragment_graph& curve_frag_graph,
@@ -40,7 +40,7 @@ public:
   }
 
   //: destructor
-  virtual ~dbdet_sel<curve_model>(){}
+  virtual ~dbdet_sel(){}
 
   //: form a curve hypothesis of the appropriate model given a pair of edgels
   inline curve_model* form_a_hypothesis(dbdet_edgel* ref_e, dbdet_edgel* e2, bool &ref_first, 

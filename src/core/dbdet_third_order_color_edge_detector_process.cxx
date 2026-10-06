@@ -35,6 +35,7 @@
 #include <vil/vil_border.h>
 
 #include "dbdet_third_order_color_detector.h"
+#include "cf_params.h"
 
 //: Constructor
 dbdet_third_order_color_edge_detector_process::dbdet_third_order_color_edge_detector_process()
@@ -58,15 +59,15 @@ dbdet_third_order_color_edge_detector_process::dbdet_third_order_color_edge_dete
   parabola_fit_type.push_back("3-point fit");      //0
   parabola_fit_type.push_back("9-point fit");      //1
 
-  if( !parameters()->add( "Load Component Images"    , "-bLoadComps"   , false ) ||
-      !parameters()->add( "Color Space conversion"   , "-col_conv" , color_conversion_choices, 2) ||
-      !parameters()->add( "Gradient Operator"   , "-grad_op" , gradient_operator_choices, 0) ||
-      !parameters()->add( "Convolution Algo:"   , "-conv_algo" , convolution_choices, 0) ||
-      !parameters()->add( "Sigma (Gaussian)"    , "-sigma"   , 1.0 ) ||
-      !parameters()->add( "Gradient Magnitude Threshold"   , "-thresh" , 2.0 ) ||
-      !parameters()->add( "Interpolation factor [2^N], N= "  , "-int_factor" , 1 ) ||
-      !parameters()->add( "Parabola Fit type"   , "-parabola_fit" , parabola_fit_type, 0) ||
-      !parameters()->add( "Reduce edgel tokens "  , "-breduce" , false ))
+  if( !parameters()->add( "Load Component Images"    , "-bLoadComps"   , cf_params::edge_load_component_images ) ||
+      !parameters()->add( "Color Space conversion"   , "-col_conv" , color_conversion_choices, cf_params::edge_color_space) ||
+      !parameters()->add( "Gradient Operator"   , "-grad_op" , gradient_operator_choices, cf_params::edge_grad_op) ||
+      !parameters()->add( "Convolution Algo:"   , "-conv_algo" , convolution_choices, cf_params::edge_conv_algo) ||
+      !parameters()->add( "Sigma (Gaussian)"    , "-sigma"   , cf_params::edge_sigma ) ||
+      !parameters()->add( "Gradient Magnitude Threshold"   , "-thresh" , cf_params::edge_thresh ) ||
+      !parameters()->add( "Interpolation factor [2^N], N= "  , "-int_factor" , cf_params::edge_int_factor ) ||
+      !parameters()->add( "Parabola Fit type"   , "-parabola_fit" , parabola_fit_type, cf_params::edge_parabola_fit) ||
+      !parameters()->add( "Reduce edgel tokens "  , "-breduce" , cf_params::edge_reduce_tokens ))
   {
     vcl_cerr << "ERROR: Adding parameters in " __FILE__ << vcl_endl;
   }

@@ -2,6 +2,7 @@
 #ifndef dbdet_yuliang_features_h
 #define dbdet_yuliang_features_h
 #include <vnl/vnl_vector_fixed.h>
+#include "cf_params.h"
 
 
 #define y_params_1_size 2
@@ -35,11 +36,12 @@ namespace y_features {
 class dbdet_yuliang_const {
 
 public:
-  static constexpr double diag_of_train = 578.275; // ???
-  static unsigned const nbr_num_edges = 15;  // # of edges close to connecting points
-  static unsigned const nbr_len_th = 5; // short curve under this length will be grouped due to geometry.
-  static constexpr double merge_th_sem = 0.2;
-  static constexpr double merge_th_geom = 0.5;
+  // Values live in cf_params.h so they can be tuned in one place.
+  static constexpr double diag_of_train = cf_params::diag_of_train;
+  static unsigned const nbr_num_edges = cf_params::nbr_num_edges;
+  static unsigned const nbr_len_th = cf_params::nbr_len_th;
+  static constexpr double merge_th_sem = cf_params::merge_th_sem;
+  static constexpr double merge_th_geom = cf_params::merge_th_geom;
   static constexpr double epsilon = 1e-10;
 };
 
