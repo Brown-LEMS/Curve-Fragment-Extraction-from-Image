@@ -105,8 +105,15 @@ int main(int argc, char* argv[]) {
     const std::string output_cem_file = argv[2];
     std::string output_edg_file{};
     int next_arg = 3;
-    if (argc > next_arg && std::string(argv[next_arg]).ends_with(".edg")) {
-        output_edg_file = argv[next_arg++];
+    if (argc > next_arg) {
+        const std::string arg(argv[next_arg]);
+        const std::string edg_suffix = ".edg";
+        if (arg.size() >= edg_suffix.size() &&
+            arg.compare(arg.size() - edg_suffix.size(), edg_suffix.size(),
+                        edg_suffix) == 0) {
+            output_edg_file = arg;
+            ++next_arg;
+        }
     }
 
     // defaults

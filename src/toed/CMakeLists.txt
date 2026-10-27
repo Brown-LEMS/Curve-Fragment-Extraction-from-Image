@@ -7,7 +7,9 @@ cmake_minimum_required(VERSION 3.15)
 #   TOED     - the standalone detector (image -> TOED_edges.{txt,edg})
 project(ThirdOrderEdgeDetector CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+# C++17 and C++20 both supported; override with -DCMAKE_CXX_STANDARD=20
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard (17 or 20)")
+set_property(CACHE CMAKE_CXX_STANDARD PROPERTY STRINGS 17 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(OpenCV 4 REQUIRED)
