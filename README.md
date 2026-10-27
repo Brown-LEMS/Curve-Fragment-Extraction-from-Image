@@ -72,6 +72,17 @@ The three executables differ in the inputs and the process but they share the sa
 - **`ocv_compute_curve_frags`**: `<image-name> <output-cem-name>.cem [<output-edg-name>.edg] [threshold=0.1]`
     - This is a replacement for `dborl_compute_curve_frags` that uses a built-in OpenCV Structured Forest Edge detector. See above for usage; the executable needs an image, an output `.cem` file, and optionally a `.edg` output file, which is helpful for visualizing and testing the edge detector seperate from the `.cem` curve fragment output. Additionally, an optional threshold can be specified (default is 0.1 if cli argument is elided) that determines at what intensity a pixel should be recorded as an edgel. Leaving this at 0.1 is generally good, although lowering this can reduce noise and raising it can boost the edge detector's sensitivity.
 
+- **`toed_compute_curve_frags`**: `<image-name> <output-cem-name>.cem [<output-edg-name>.edg] [threshold=10] [sigma=2]`
+    - Same pipeline as `ocv_compute_curve_frags`, but edges come from the CPU Third-Order Edge Detector (TOED, ported from [this repository](https://github.com/C-H-Chien/Third-Order-Edge-Detector) into `src/toed/`) run on the grayscale image. `threshold` is the gradient-magnitude cutoff (not normalized, intensities are 0-255) and `sigma` is the Gaussian scale of the detector. A step edge of contrast `h` has a peak gradient of `h / (sigma * sqrt(2*pi))`, so the defaults keep edges of roughly 50+ gray levels of contrast. To make the detector less sensitive, raise `sigma` first (it suppresses texture and noise much better than the threshold alone), then the threshold; lower both for more detail. The standalone TOED defaults (`threshold=1`, `sigma=1`) keep so much texture that linking gets slow and the output is flooded with short fragments.
+    - The detector is multithreaded with OpenMP when CMake finds it (on macOS: `brew install libomp`; it is picked up automatically) and runs single-threaded otherwise. Set `OMP_NUM_THREADS` to limit the number of threads.
+
+	Example:
+	```bash
+	$ ./build/src/toed_compute_curve_frags 10081.jpg out.cem out.edg 10 2
+	```
+
+    - The standalone detector is also built as `build/src/toed/TOED` (`<image> [nthreads] [output_dir]`), writing `TOED_edges.txt` / `TOED_edges.edg`. Its compile-time defaults live in `src/toed/toed_config.hpp`.
+
 ## Visualization
 We provide a simple MATLAB code `demo_vis_io.m` for visualizing the generated curve fragments. Simply run that script with specified image and `cem` file.
 

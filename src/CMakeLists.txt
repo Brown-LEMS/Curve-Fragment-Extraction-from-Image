@@ -15,6 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 add_subdirectory(edge_detector)
+add_subdirectory(toed)
 
 IF(VXL_FOUND)
     # include the standard VXL stuff
@@ -35,6 +36,10 @@ IF(VXL_FOUND)
     set(ocv_edt_link_sources
         ocv_edt_link.cxx
         edge_detector/detect.cpp
+    )
+
+    set(toed_edt_link_sources
+        toed_edt_link.cxx
     )
 
 
@@ -58,6 +63,11 @@ IF(VXL_FOUND)
     target_link_libraries (ocv_compute_curve_frags core)
     target_include_directories(ocv_compute_curve_frags  PUBLIC "edge_detector/include" ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(ocv_compute_curve_frags ${OpenCV_LIBS})
+
+    add_executable (toed_compute_curve_frags ${toed_edt_link_sources} )
+    target_link_libraries (toed_compute_curve_frags core toed_cpu)
+    target_include_directories(toed_compute_curve_frags PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(toed_compute_curve_frags ${OpenCV_LIBS})
 
 
     add_executable (MSEL_edges2CFs ${MSEL_from_edge_sources} )
